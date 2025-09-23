@@ -292,7 +292,8 @@ export class MemStorage implements IStorage {
       metadata: insertPayment.metadata || null,
       status: insertPayment.status || "created",
       razorpayPaymentId: insertPayment.razorpayPaymentId || null,
-      currency: insertPayment.currency || "INR"
+      currency: insertPayment.currency || "INR",
+      contactId: insertPayment.contactId || null
     };
     this.payments.set(id, payment);
     return payment;

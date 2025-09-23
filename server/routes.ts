@@ -3,10 +3,17 @@ import { createServer, type Server } from "http";
 import { storage } from "./storage";
 import { insertContactSchema, insertPaymentSchema } from "@shared/schema";
 import { z } from "zod";
+import Razorpay from "razorpay";
+import crypto from "crypto";
 
 // Razorpay configuration
-const RAZORPAY_KEY_ID = process.env.RAZORPAY_KEY_ID || "rzp_test_key";
-const RAZORPAY_KEY_SECRET = process.env.RAZORPAY_KEY_SECRET || "rzp_test_secret";
+const RAZORPAY_KEY_ID = process.env.RAZORPAY_KEY_ID!;
+const RAZORPAY_KEY_SECRET = process.env.RAZORPAY_KEY_SECRET!;
+
+const razorpay = new Razorpay({
+  key_id: RAZORPAY_KEY_ID,
+  key_secret: RAZORPAY_KEY_SECRET,
+});
 
 // Service pricing
 const SERVICE_PRICING = {
@@ -74,12 +81,18 @@ export async function registerRoutes(app: Express): Promise<Server> {
       const validatedContact = insertContactSchema.parse(contactInfo);
       const contact = await storage.createContact(validatedContact);
 
-      // In a real implementation, you would use the Razorpay SDK here
-      // For demo purposes, we'll create a mock order
-      const mockOrderId = `order_${Date.now()}`;
+      // Create Razorpay order
+      const options = {
+        amount: service.amount, // amount in paise
+        currency: 'INR',
+        receipt: `receipt_${Date.now()}`,
+        payment_capture: 1
+      };
+
+      const order = await razorpay.orders.create(options);
       
       const payment = await storage.createPayment({
-        razorpayOrderId: mockOrderId,
+        razorpayOrderId: order.id,
         amount: service.amount.toString(),
         currency: "INR",
         status: "created",
@@ -89,7 +102,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
       });
 
       res.json({
-        orderId: mockOrderId,
+        orderId: order.id,
         amount: service.amount,
         currency: "INR",
         keyId: RAZORPAY_KEY_ID,
@@ -105,21 +118,91 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
+  // Payment verification schema
+  const verifyPaymentSchema = z.object({
+    paymentId: z.string().min(1, "Payment ID is required"),
+    razorpayPaymentId: z.string().min(1, "Razorpay payment ID is required"),
+    razorpayOrderId: z.string().min(1, "Razorpay order ID is required"),
+    razorpaySignature: z.string().min(1, "Razorpay signature is required"),
+  });
+
   // Verify payment
   app.post("/api/payments/verify", async (req, res) => {
     try {
-      const { paymentId, razorpayPaymentId, razorpaySignature } = req.body;
+      // Validate request body
+      const validationResult = verifyPaymentSchema.safeParse(req.body);
+      if (!validationResult.success) {
+        return res.status(400).json({ 
+          error: "Invalid request data", 
+          details: validationResult.error.errors 
+        });
+      }
       
-      // In a real implementation, you would verify the signature with Razorpay
-      // For demo purposes, we'll just update the payment status
+      const { paymentId, razorpayPaymentId, razorpayOrderId, razorpaySignature } = validationResult.data;
+      
+      // First, get the stored payment to verify order ID matches
+      const storedPayment = await storage.getPayment(paymentId);
+      if (!storedPayment) {
+        return res.status(404).json({ error: "Payment not found" });
+      }
+
+      // Verify that the razorpay order ID matches the stored payment
+      if (storedPayment.razorpayOrderId !== razorpayOrderId) {
+        return res.status(400).json({ error: "Order ID mismatch" });
+      }
+
+      // Prevent duplicate processing
+      if (storedPayment.status === "completed") {
+        return res.json({ 
+          success: true, 
+          message: "Payment already verified",
+          payment: storedPayment 
+        });
+      }
+      
+      // Verify signature using timing-safe comparison
+      const body = razorpayOrderId + "|" + razorpayPaymentId;
+      const expectedSignature = crypto
+        .createHmac("sha256", RAZORPAY_KEY_SECRET)
+        .update(body.toString())
+        .digest("hex");
+
+      if (!crypto.timingSafeEqual(Buffer.from(expectedSignature, 'hex'), Buffer.from(razorpaySignature, 'hex'))) {
+        return res.status(400).json({ error: "Invalid signature" });
+      }
+
+      // Verify payment details with Razorpay API (fail-closed approach)
+      try {
+        const paymentDetails = await razorpay.payments.fetch(razorpayPaymentId);
+        
+        // Verify order ID matches (defense in depth)
+        if (paymentDetails.order_id !== razorpayOrderId) {
+          return res.status(400).json({ error: "Order ID mismatch in payment details" });
+        }
+        
+        // Verify payment amount and currency match
+        if (paymentDetails.amount.toString() !== storedPayment.amount || 
+            paymentDetails.currency !== storedPayment.currency) {
+          return res.status(400).json({ error: "Payment amount or currency mismatch" });
+        }
+
+        // Verify payment is captured
+        if (paymentDetails.status !== 'captured') {
+          return res.status(400).json({ error: "Payment not captured" });
+        }
+      } catch (razorpayError) {
+        console.error("Error fetching payment from Razorpay:", razorpayError);
+        return res.status(500).json({ 
+          error: "Unable to verify payment with Razorpay", 
+          details: "Please try again or contact support" 
+        });
+      }
+
+      // Update payment status
       const payment = await storage.updatePayment(paymentId, {
         razorpayPaymentId,
         status: "completed"
       });
-
-      if (!payment) {
-        return res.status(404).json({ error: "Payment not found" });
-      }
 
       res.json({ 
         success: true, 

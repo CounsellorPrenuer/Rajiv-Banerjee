@@ -81,22 +81,85 @@ export default function ContactSection() {
     },
     onSuccess: async (response) => {
       const data = await response.json();
+      const formData = watch(); // Get current form values for prefill
       
-      // In a real implementation, you would integrate with Razorpay here
-      toast({
-        title: "Payment Integration",
-        description: "Razorpay payment gateway would be initialized here with order ID: " + data.orderId,
-      });
+      // Check if Razorpay script is already loaded
+      if (!(window as any).Razorpay) {
+        // Load Razorpay script dynamically
+        const script = document.createElement('script');
+        script.src = 'https://checkout.razorpay.com/v1/checkout.js';
+        script.async = true;
+        script.onload = () => initializePayment();
+        script.onerror = () => {
+          toast({
+            title: "Payment script failed to load",
+            description: "Please check your internet connection and try again.",
+            variant: "destructive",
+          });
+        };
+        document.body.appendChild(script);
+      } else {
+        initializePayment();
+      }
       
-      // Mock payment success
-      setTimeout(() => {
-        toast({
-          title: "Payment successful!",
-          description: "Your session has been booked. Check your email for details.",
-        });
-        reset();
-        setIsPaymentMode(false);
-      }, 2000);
+      function initializePayment() {
+        const options = {
+          key: data.keyId,
+          amount: data.amount,
+          currency: data.currency,
+          order_id: data.orderId,
+          name: 'KarmaPath',
+          description: 'Career Counseling Session',
+          image: '/favicon.ico',
+          handler: async (response: any) => {
+            try {
+              const verifyResponse = await apiRequest('POST', '/api/payments/verify', {
+                paymentId: data.paymentId,
+                razorpayPaymentId: response.razorpay_payment_id,
+                razorpayOrderId: response.razorpay_order_id,
+                razorpaySignature: response.razorpay_signature,
+              });
+              
+              const result = await verifyResponse.json();
+              if (result.success) {
+                toast({
+                  title: "Payment successful!",
+                  description: "Your session has been booked. Check your email for details.",
+                });
+                reset();
+                setIsPaymentMode(false);
+              } else {
+                throw new Error(result.error || 'Payment verification failed');
+              }
+            } catch (error: any) {
+              toast({
+                title: "Payment verification failed",
+                description: error.message || "Please contact support if payment was deducted.",
+                variant: "destructive",
+              });
+            }
+          },
+          prefill: {
+            name: `${formData.firstName} ${formData.lastName}`,
+            email: formData.email,
+            contact: formData.phone,
+          },
+          theme: {
+            color: 'hsl(221, 83%, 53%)',
+          },
+          modal: {
+            ondismiss: () => {
+              toast({
+                title: "Payment cancelled",
+                description: "You can try again anytime.",
+              });
+            }
+          }
+        };
+        
+        const razorpay = new (window as any).Razorpay(options);
+        razorpay.open();
+      }
     },
     onError: (error) => {
       toast({
