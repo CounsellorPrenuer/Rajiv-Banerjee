@@ -180,7 +180,8 @@ export class MemStorage implements IStorage {
       createdAt: new Date(),
       updatedAt: new Date(),
       metadata: insertPayment.metadata || null,
-      status: insertPayment.status || "created"
+      status: insertPayment.status || "created",
+      razorpayPaymentId: insertPayment.razorpayPaymentId || null
     };
     this.payments.set(id, payment);
     return payment;
