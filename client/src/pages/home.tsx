@@ -5,7 +5,9 @@ import ServicesSection from "@/components/services-section";
 import AboutSection from "@/components/about-section";
 import TestimonialsSection from "@/components/testimonials-section";
 import BlogSection from "@/components/blog-section";
+import ResourcesSection from "@/components/resources-section";
 import ContactSection from "@/components/contact-section";
+import MentoriaSection from "@/components/mentoria-section";
 import Footer from "@/components/footer";
 
 export default function Home() {
@@ -57,7 +59,9 @@ export default function Home() {
         <AboutSection />
         <TestimonialsSection />
         <BlogSection />
+        <ResourcesSection />
         <ContactSection />
+        <MentoriaSection />
       </main>
       <Footer />
     </div>

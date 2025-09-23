@@ -1,4 +1,5 @@
-import { Route } from "lucide-react";
+import { Linkedin, Instagram, Shield, FileText } from "lucide-react";
+import karmaPathLogo from "@assets/Karma Path - RAJIV BANERJEE_1758627126158.png";
 
 const footerSections = [
   {
@@ -6,25 +7,27 @@ const footerSections = [
     links: [
       { label: "Career Guidance", href: "#services" },
       { label: "Agile Coaching", href: "#services" },
+      { label: "Mentorship", href: "#services" },
       { label: "Corporate Workshops", href: "#services" },
-      { label: "Enterprise Mentoring", href: "#services" },
     ],
   },
   {
-    title: "Resources",
+    title: "Quick Links",
     links: [
+      { label: "About", href: "#about" },
+      { label: "Packages", href: "#services" },
       { label: "Blog", href: "#blog" },
-      { label: "Career Resources", href: "#blog" },
-      { label: "Success Stories", href: "#testimonials" },
-      { label: "Free Tools", href: "#contact" },
+      { label: "Contact", href: "#contact" },
+      { label: "Privacy Policy", href: "#privacy" },
+      { label: "Terms of Service", href: "#terms" },
     ],
   },
   {
-    title: "Contact",
+    title: "Trust & Compliance",
     links: [
-      { label: "rajivban@gmail.com", href: "mailto:rajivban@gmail.com" },
-      { label: "+91 9830115113", href: "tel:+919830115113" },
-      { label: "www.KarmaPath.coach", href: "https://www.karmapath.coach" },
+      { label: "GDPR-compliant", href: "#privacy" },
+      { label: "Confidential", href: "#privacy" },
+      { label: "Certified Coaching", href: "#about" },
     ],
   },
 ];
@@ -45,10 +48,12 @@ export default function Footer() {
         <div className="grid grid-cols-1 md:grid-cols-4 gap-8">
           <div>
             <div className="flex items-center space-x-3 mb-6">
-              <div className="w-8 h-8 bg-primary rounded-lg flex items-center justify-center">
-                <Route className="text-primary-foreground text-sm" size={16} />
-              </div>
-              <span className="text-lg font-display font-bold">KarmaPath</span>
+              <img 
+                src={karmaPathLogo}
+                alt="KarmaPath Logo" 
+                className="w-12 h-auto"
+                data-testid="footer-logo"
+              />
             </div>
             <p className="text-gray-400 mb-6">
               Guiding professionals and students towards career clarity and growth with 20+ years of experience.
@@ -61,9 +66,7 @@ export default function Footer() {
                 className="text-gray-400 hover:text-white transition-colors"
                 data-testid="footer-link-linkedin"
               >
-                <svg className="w-5 h-5" fill="currentColor" viewBox="0 0 20 20">
-                  <path fillRule="evenodd" d="M16.338 16.338H13.67V12.16c0-.995-.017-2.277-1.387-2.277-1.39 0-1.601 1.086-1.601 2.207v4.248H8.014v-8.59h2.559v1.174h.037c.356-.675 1.227-1.387 2.526-1.387 2.703 0 3.203 1.778 3.203 4.092v4.711zM5.005 6.575a1.548 1.548 0 11-.003-3.096 1.548 1.548 0 01.003 3.096zm-1.337 9.763H6.34v-8.59H3.667v8.59zM17.668 1H2.328C1.595 1 1 1.581 1 2.298v15.403C1 18.418 1.595 19 2.328 19h15.34c.734 0 1.332-.582 1.332-1.299V2.298C19 1.581 18.402 1 17.668 1z" clipRule="evenodd"/>
-                </svg>
+                <Linkedin className="w-5 h-5" />
               </a>
               <a 
                 href="https://www.instagram.com/rajivban8" 
@@ -72,9 +75,7 @@ export default function Footer() {
                 className="text-gray-400 hover:text-white transition-colors"
                 data-testid="footer-link-instagram"
               >
-                <svg className="w-5 h-5" fill="currentColor" viewBox="0 0 20 20">
-                  <path fillRule="evenodd" d="M10 2.253c2.262 0 2.53.009 3.426.05.826.037 1.275.174 1.574.289.396.153.678.337.975.634.297.297.481.579.634.975.115.299.252.748.289 1.574.041.896.05 1.164.05 3.426s-.009 2.53-.05 3.426c-.037.826-.174 1.275-.289 1.574a2.588 2.588 0 01-.634.975 2.588 2.588 0 01-.975.634c-.299.115-.748.252-1.574.289-.896.041-1.164.05-3.426.05s-2.53-.009-3.426-.05c-.826-.037-1.275-.174-1.574-.289a2.588 2.588 0 01-.975-.634 2.588 2.588 0 01-.634-.975c-.115-.299-.252-.748-.289-1.574-.041-.896-.05-1.164-.05-3.426s.009-2.53.05-3.426c.037-.826.174-1.275.289-1.574.153-.396.337-.678.634-.975a2.588 2.588 0 01.975-.634c.299-.115.748-.252 1.574-.289.896-.041 1.164-.05 3.426-.05zm0-1.622C7.735.631 7.459.622 6.549.581 5.64.54 5.002.366 4.428.193A4.209 4.209 0 002.193 2.428C2.02 3.002 1.846 3.64 1.805 4.549 1.764 5.459 1.755 5.735 1.755 10s.009 4.541.05 5.451c.041.909.215 1.547.388 2.121a4.209 4.209 0 002.235 2.235c.574.173 1.212.347 2.121.388.91.041 1.186.05 5.451.05s4.541-.009 5.451-.05c.909-.041 1.547-.215 2.121-.388a4.209 4.209 0 002.235-2.235c.173-.574.347-1.212.388-2.121.041-.91.05-1.186.05-5.451s-.009-4.541-.05-5.451c-.041-.909-.215-1.547-.388-2.121A4.209 4.209 0 0015.572.193c-.574-.173-1.212-.347-2.121-.388C12.541.64 12.265.631 10 .631zm0 4.378a3.991 3.991 0 100 7.982 3.991 3.991 0 000-7.982zM10 13.001A3.01 3.01 0 1110 6.999a3.01 3.01 0 010 6.002zm5.906-7.772a.933.933 0 11-1.866 0 .933.933 0 011.866 0z" clipRule="evenodd"/>
-                </svg>
+                <Instagram className="w-5 h-5" />
               </a>
               <a 
                 href="https://x.com/rajibane" 
@@ -100,7 +101,7 @@ export default function Footer() {
                       <button
                         onClick={() => scrollToSection(link.href)}
                         className="hover:text-white transition-colors text-left"
-                        data-testid={`footer-link-${link.label.toLowerCase().replace(/\s+/g, '-')}`}
+                        data-testid={`footer-link-${link.label.toLowerCase()}`}
                       >
                         {link.label}
                       </button>
@@ -108,7 +109,7 @@ export default function Footer() {
                       <a 
                         href={link.href} 
                         className="hover:text-white transition-colors"
-                        data-testid={`footer-link-${link.label.toLowerCase().replace(/\s+/g, '-')}`}
+                        data-testid={`footer-link-${link.label.toLowerCase()}`}
                       >
                         {link.label}
                       </a>
@@ -120,8 +121,21 @@ export default function Footer() {
           ))}
         </div>
         
-        <div className="border-t border-gray-700 mt-8 pt-8 text-center text-gray-400">
-          <p>&copy; 2024 KarmaPath. All rights reserved. | Privacy Policy | Terms of Service</p>
+        <div className="border-t border-gray-700 mt-8 pt-8">
+          <div className="flex flex-col md:flex-row justify-between items-center text-gray-400 space-y-4 md:space-y-0">
+            <p>&copy; 2025 KarmaPath – All Rights Reserved</p>
+            <div className="flex items-center space-x-2">
+              <span>Made with</span>
+              <div className="text-red-500">❤️</div>
+              <span>by</span>
+              <a href="#" className="text-primary hover:text-primary/80 transition-colors font-semibold">
+                Mentoria
+              </a>
+            </div>
+            <p className="text-sm">
+              In partnership with Mentoria for enhanced career guidance services.
+            </p>
+          </div>
         </div>
       </div>
     </footer>

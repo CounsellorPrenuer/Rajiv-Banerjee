@@ -1,6 +1,7 @@
 import { Button } from "@/components/ui/button";
 import { Calendar, Play } from "lucide-react";
 import AnimatedCounter from "@/components/animated-counter";
+import karmaPathLogo from "@assets/Karma Path - RAJIV BANERJEE_1758627126158.png";
 
 export default function HeroSection() {
   return (
@@ -62,17 +63,21 @@ export default function HeroSection() {
           </div>
           
           <div className="relative">
-            <div className="relative z-10 animate-float">
-              <img 
-                src="https://images.unsplash.com/photo-1507003211169-0a1dd7228f2d?ixlib=rb-4.0.3&auto=format&fit=crop&w=500&h=600" 
-                alt="Rajiv Banerjee - Career Coach" 
-                className="w-80 h-96 object-cover rounded-2xl shadow-2xl mx-auto"
-                data-testid="img-rajiv-banerjee"
-              />
+            <div className="relative z-10 animate-float flex items-center justify-center">
+              <div className="bg-white bg-opacity-10 backdrop-blur-sm rounded-3xl p-12 shadow-2xl border border-white border-opacity-20">
+                <img 
+                  src={karmaPathLogo}
+                  alt="KarmaPath Career Counseling Logo" 
+                  className="w-80 h-auto mx-auto"
+                  data-testid="img-karmapath-logo"
+                />
+              </div>
             </div>
             {/* Floating elements */}
             <div className="absolute -top-10 -right-10 w-20 h-20 bg-white bg-opacity-20 rounded-full animate-float" style={{animationDelay: '-2s'}}></div>
             <div className="absolute -bottom-10 -left-10 w-16 h-16 bg-white bg-opacity-20 rounded-full animate-float" style={{animationDelay: '-4s'}}></div>
+            <div className="absolute top-1/2 -left-20 w-12 h-12 bg-gradient-to-r from-blue-300 to-blue-200 rounded-full animate-float" style={{animationDelay: '-1s'}}></div>
+            <div className="absolute top-1/4 -right-16 w-8 h-8 bg-gradient-to-r from-white to-blue-100 rounded-full animate-float" style={{animationDelay: '-3s'}}></div>
           </div>
         </div>
       </div>
