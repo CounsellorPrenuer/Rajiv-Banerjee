@@ -1,10 +1,59 @@
 import express, { type Request, Response, NextFunction } from "express";
+import session from "express-session";
+import rateLimit from "express-rate-limit";
+import connectPgSimple from "connect-pg-simple";
+import { pool } from "./db";
 import { registerRoutes } from "./routes";
 import { setupVite, serveStatic, log } from "./vite";
 
 const app = express();
 app.use(express.json());
 app.use(express.urlencoded({ extended: false }));
+
+// Configure trust proxy for production behind reverse proxy
+if (process.env.NODE_ENV === 'production') {
+  app.set('trust proxy', 1);
+}
+
+// Configure session store
+const PgSession = connectPgSimple(session);
+const sessionStore = process.env.NODE_ENV === 'production' || process.env.DATABASE_URL 
+  ? new PgSession({
+      pool: pool,
+      tableName: 'session',
+      createTableIfMissing: true
+    })
+  : undefined; // Use default MemoryStore in development without DATABASE_URL
+
+// Configure session middleware
+if (process.env.NODE_ENV === 'production' && !process.env.SESSION_SECRET) {
+  throw new Error('SESSION_SECRET is required in production');
+}
+
+app.use(session({
+  store: sessionStore,
+  secret: process.env.SESSION_SECRET || 'dev-secret-key',
+  resave: false,
+  saveUninitialized: false,
+  cookie: {
+    secure: process.env.NODE_ENV === 'production',
+    httpOnly: true,
+    maxAge: 24 * 60 * 60 * 1000, // 24 hours
+    sameSite: 'lax' // CSRF protection
+  }
+}));
+
+// Rate limiting for authentication endpoints
+const authRateLimit = rateLimit({
+  windowMs: 15 * 60 * 1000, // 15 minutes
+  max: 5, // Limit each IP to 5 requests per windowMs
+  message: { error: 'Too many authentication attempts, please try again later' },
+  standardHeaders: true,
+  legacyHeaders: false,
+});
+
+// Apply rate limiting to auth routes
+app.use('/api/auth/login', authRateLimit);
 
 app.use((req, res, next) => {
   const start = Date.now();

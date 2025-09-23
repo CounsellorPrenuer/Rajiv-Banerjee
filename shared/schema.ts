@@ -7,6 +7,8 @@ export const users = pgTable("users", {
   id: varchar("id").primaryKey().default(sql`gen_random_uuid()`),
   username: text("username").notNull().unique(),
   password: text("password").notNull(),
+  isAdmin: boolean("is_admin").notNull().default(false),
+  createdAt: timestamp("created_at").defaultNow().notNull(),
 });
 
 export const contacts = pgTable("contacts", {
@@ -62,6 +64,11 @@ export const testimonials = pgTable("testimonials", {
 export const insertUserSchema = createInsertSchema(users).pick({
   username: true,
   password: true,
+});
+
+export const adminLoginSchema = z.object({
+  username: z.string().min(1, "Username is required"),
+  password: z.string().min(1, "Password is required"),
 });
 
 export const insertContactSchema = createInsertSchema(contacts).omit({

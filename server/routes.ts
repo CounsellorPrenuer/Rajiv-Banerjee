@@ -1,10 +1,11 @@
 import type { Express } from "express";
 import { createServer, type Server } from "http";
 import { storage } from "./storage";
-import { insertContactSchema, insertPaymentSchema } from "@shared/schema";
+import { insertContactSchema, insertPaymentSchema, adminLoginSchema } from "@shared/schema";
 import { z } from "zod";
 import Razorpay from "razorpay";
 import crypto from "crypto";
+import bcrypt from "bcrypt";
 
 // Razorpay configuration
 const RAZORPAY_KEY_ID = process.env.RAZORPAY_KEY_ID!;
@@ -23,7 +24,104 @@ const SERVICE_PRICING = {
   "enterprise-mentoring": { amount: 4999900, name: "Enterprise Mentoring" },
 };
 
+// Authentication middleware
+function requireAuth(req: any, res: any, next: any) {
+  if (req.session?.user?.isAdmin) {
+    next();
+  } else {
+    res.status(401).json({ error: "Authentication required" });
+  }
+}
+
 export async function registerRoutes(app: Express): Promise<Server> {
+  // Admin authentication routes
+  app.post("/api/auth/login", async (req, res) => {
+    try {
+      const validationResult = adminLoginSchema.safeParse(req.body);
+      if (!validationResult.success) {
+        return res.status(400).json({ 
+          error: "Invalid request data", 
+          details: validationResult.error.errors 
+        });
+      }
+      
+      const { username, password } = validationResult.data;
+      const user = await storage.getUserByUsername(username);
+      
+      if (!user || !user.isAdmin) {
+        return res.status(401).json({ error: "Invalid admin credentials" });
+      }
+      
+      const validPassword = await bcrypt.compare(password, user.password);
+      if (!validPassword) {
+        return res.status(401).json({ error: "Invalid admin credentials" });
+      }
+      
+      // Regenerate session to prevent session fixation
+      (req as any).session.regenerate((err: any) => {
+        if (err) {
+          console.error('Session regeneration error:', err);
+          return res.status(500).json({ error: "Login failed" });
+        }
+        
+        // Set session after regeneration
+        (req as any).session.user = {
+          id: user.id,
+          username: user.username,
+          isAdmin: user.isAdmin
+        };
+        
+        // Save session to ensure it's persisted
+        (req as any).session.save((saveErr: any) => {
+          if (saveErr) {
+            console.error('Session save error:', saveErr);
+            return res.status(500).json({ error: "Login failed" });
+          }
+          
+          res.json({ 
+            success: true,
+            user: {
+              id: user.id,
+              username: user.username,
+              isAdmin: user.isAdmin
+            }
+          });
+        });
+      });
+    } catch (error) {
+      console.error("Error during login:", error);
+      res.status(500).json({ error: "Login failed" });
+    }
+  });
+  
+  app.post("/api/auth/logout", (req, res) => {
+    (req as any).session.destroy((err: any) => {
+      if (err) {
+        console.error('Session destroy error:', err);
+        return res.status(500).json({ error: 'Logout failed' });
+      }
+      res.clearCookie('connect.sid'); // Clear session cookie
+      res.json({ success: true });
+    });
+  });
+  
+  app.get("/api/auth/me", (req, res) => {
+    if ((req as any).session?.user) {
+      res.json({ user: (req as any).session.user });
+    } else {
+      res.status(401).json({ error: "Not authenticated" });
+    }
+  });
+
+  // Protected admin API endpoint for testing authentication
+  app.get("/api/admin/health", requireAuth, (req, res) => {
+    res.json({ 
+      status: "healthy", 
+      message: "Admin API is accessible", 
+      user: (req as any).session.user 
+    });
+  });
+
   // Get blog posts
   app.get("/api/blog-posts", async (req, res) => {
     try {
