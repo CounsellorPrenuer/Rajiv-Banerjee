@@ -328,7 +328,7 @@ export function AdminDashboardPage() {
 
   const handleDeleteService = useMutation({
     mutationFn: async (id: string) => {
-      return apiRequest("DELETE", `/api/services/${id}`, {});
+      return apiRequest("DELETE", `/api/admin/services/${id}`, {});
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ["/api/services"] });
