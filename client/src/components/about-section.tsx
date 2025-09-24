@@ -10,7 +10,7 @@ const expertiseAreas = [
 
 export default function AboutSection() {
   return (
-    <section id="about" className="py-20 bg-muted" data-testid="about-section">
+    <section id="about" className="py-20 bg-gradient-to-br from-blue-50 via-white to-indigo-50 dark:from-gray-900 dark:via-gray-800 dark:to-gray-900" data-testid="about-section">
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
         <div className="grid grid-cols-1 lg:grid-cols-2 gap-16 items-center">
           <div className="scroll-animate">
@@ -35,18 +35,18 @@ export default function AboutSection() {
               </p>
             </div>
             
-            <div className="grid grid-cols-2 gap-6">
-              <div className="bg-card p-6 rounded-xl border border-border">
+            <div className="grid grid-cols-2 gap-6 scroll-animate">
+              <div className="bg-card p-6 rounded-xl border border-border scroll-animate">
                 <div className="text-2xl font-bold text-primary mb-2" data-testid="text-years-experience">20+</div>
                 <div className="text-muted-foreground">Years Corporate Experience</div>
               </div>
-              <div className="bg-card p-6 rounded-xl border border-border">
+              <div className="bg-card p-6 rounded-xl border border-border scroll-animate">
                 <div className="text-2xl font-bold text-primary mb-2" data-testid="text-professionals-mentored">500+</div>
                 <div className="text-muted-foreground">Professionals Mentored</div>
               </div>
             </div>
             
-            <div className="space-y-4">
+            <div className="space-y-4 scroll-animate">
               <h3 className="text-xl font-semibold text-foreground">Expertise Areas</h3>
               <div className="flex flex-wrap gap-3">
                 {expertiseAreas.map((area) => (
