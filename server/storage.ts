@@ -35,12 +35,17 @@ export interface IStorage {
   updatePayment(id: string, updates: Partial<Payment>): Promise<Payment | undefined>;
   
   getBlogPosts(): Promise<BlogPost[]>;
+  getAllBlogPosts(): Promise<BlogPost[]>;
   getBlogPost(slug: string): Promise<BlogPost | undefined>;
   createBlogPost(post: InsertBlogPost): Promise<BlogPost>;
+  updateBlogPost(id: string, updates: Partial<BlogPost>): Promise<BlogPost | undefined>;
+  deleteBlogPost(id: string): Promise<boolean>;
   
   getTestimonials(): Promise<Testimonial[]>;
   getFeaturedTestimonials(): Promise<Testimonial[]>;
   createTestimonial(testimonial: InsertTestimonial): Promise<Testimonial>;
+  updateTestimonial(id: string, updates: Partial<Testimonial>): Promise<Testimonial | undefined>;
+  deleteTestimonial(id: string): Promise<boolean>;
   
   getServices(): Promise<Service[]>;
   getService(id: string): Promise<Service | undefined>;
@@ -112,6 +117,10 @@ export class DatabaseStorage implements IStorage {
     return await db.select().from(blogPosts).where(eq(blogPosts.published, true)).orderBy(desc(blogPosts.createdAt));
   }
 
+  async getAllBlogPosts(): Promise<BlogPost[]> {
+    return await db.select().from(blogPosts).orderBy(desc(blogPosts.createdAt));
+  }
+
   async getBlogPost(slug: string): Promise<BlogPost | undefined> {
     const [post] = await db.select().from(blogPosts).where(eq(blogPosts.slug, slug));
     return post || undefined;
@@ -127,6 +136,20 @@ export class DatabaseStorage implements IStorage {
       })
       .returning();
     return post;
+  }
+
+  async updateBlogPost(id: string, updates: Partial<BlogPost>): Promise<BlogPost | undefined> {
+    const [post] = await db
+      .update(blogPosts)
+      .set({ ...updates, updatedAt: new Date() })
+      .where(eq(blogPosts.id, id))
+      .returning();
+    return post || undefined;
+  }
+
+  async deleteBlogPost(id: string): Promise<boolean> {
+    const result = await db.delete(blogPosts).where(eq(blogPosts.id, id));
+    return (result.rowCount ?? 0) > 0;
   }
 
   async getTestimonials(): Promise<Testimonial[]> {
@@ -149,6 +172,20 @@ export class DatabaseStorage implements IStorage {
       })
       .returning();
     return testimonial;
+  }
+
+  async updateTestimonial(id: string, updates: Partial<Testimonial>): Promise<Testimonial | undefined> {
+    const [testimonial] = await db
+      .update(testimonials)
+      .set(updates)
+      .where(eq(testimonials.id, id))
+      .returning();
+    return testimonial || undefined;
+  }
+
+  async deleteTestimonial(id: string): Promise<boolean> {
+    const result = await db.delete(testimonials).where(eq(testimonials.id, id));
+    return (result.rowCount ?? 0) > 0;
   }
 
   async getServices(): Promise<Service[]> {
@@ -179,7 +216,7 @@ export class DatabaseStorage implements IStorage {
 
   async deleteService(id: string): Promise<boolean> {
     const result = await db.delete(services).where(eq(services.id, id));
-    return result.rowCount > 0;
+    return (result.rowCount ?? 0) > 0;
   }
 }
 
@@ -302,7 +339,12 @@ export class MemStorage implements IStorage {
 
   async createUser(insertUser: InsertUser): Promise<User> {
     const id = randomUUID();
-    const user: User = { ...insertUser, id };
+    const user: User = { 
+      ...insertUser, 
+      id, 
+      isAdmin: false,
+      createdAt: new Date()
+    };
     this.users.set(id, user);
     return user;
   }
@@ -364,6 +406,11 @@ export class MemStorage implements IStorage {
       .sort((a, b) => b.createdAt.getTime() - a.createdAt.getTime());
   }
 
+  async getAllBlogPosts(): Promise<BlogPost[]> {
+    return Array.from(this.blogPosts.values())
+      .sort((a, b) => b.createdAt.getTime() - a.createdAt.getTime());
+  }
+
   async getBlogPost(slug: string): Promise<BlogPost | undefined> {
     return this.blogPosts.get(slug);
   }
@@ -380,6 +427,27 @@ export class MemStorage implements IStorage {
     };
     this.blogPosts.set(post.slug, post);
     return post;
+  }
+
+  async updateBlogPost(id: string, updates: Partial<BlogPost>): Promise<BlogPost | undefined> {
+    const existingPost = Array.from(this.blogPosts.values()).find(p => p.id === id);
+    if (!existingPost) return undefined;
+    
+    const updatedPost: BlogPost = { 
+      ...existingPost, 
+      ...updates, 
+      id, 
+      updatedAt: new Date() 
+    };
+    this.blogPosts.delete(existingPost.slug);
+    this.blogPosts.set(updatedPost.slug, updatedPost);
+    return updatedPost;
+  }
+
+  async deleteBlogPost(id: string): Promise<boolean> {
+    const existingPost = Array.from(this.blogPosts.values()).find(p => p.id === id);
+    if (!existingPost) return false;
+    return this.blogPosts.delete(existingPost.slug);
   }
 
   async getTestimonials(): Promise<Testimonial[]> {
@@ -407,6 +475,23 @@ export class MemStorage implements IStorage {
     };
     this.testimonials.set(id, testimonial);
     return testimonial;
+  }
+
+  async updateTestimonial(id: string, updates: Partial<Testimonial>): Promise<Testimonial | undefined> {
+    const existingTestimonial = this.testimonials.get(id);
+    if (!existingTestimonial) return undefined;
+    
+    const updatedTestimonial: Testimonial = { 
+      ...existingTestimonial, 
+      ...updates, 
+      id 
+    };
+    this.testimonials.set(id, updatedTestimonial);
+    return updatedTestimonial;
+  }
+
+  async deleteTestimonial(id: string): Promise<boolean> {
+    return this.testimonials.delete(id);
   }
 
   async getServices(): Promise<Service[]> {
