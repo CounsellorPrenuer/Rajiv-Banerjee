@@ -1,7 +1,6 @@
 import { Button } from "@/components/ui/button";
-import { Calendar, Play } from "lucide-react";
+import { Calendar, Play, Star, TrendingUp, Users, Sparkles } from "lucide-react";
 import AnimatedCounter from "@/components/animated-counter";
-import karmaPathLogo from "@assets/Karma Path - RAJIV BANERJEE_1758627126158.png";
 
 export default function HeroSection() {
   return (
@@ -63,21 +62,77 @@ export default function HeroSection() {
           </div>
           
           <div className="relative">
+            {/* Animated Graphics Container */}
             <div className="relative z-10 animate-float flex items-center justify-center">
-              <div className="bg-white bg-opacity-10 backdrop-blur-sm rounded-3xl p-12 shadow-2xl border border-white border-opacity-20">
-                <img 
-                  src={karmaPathLogo}
-                  alt="KarmaPath Career Counseling Logo" 
-                  className="w-80 h-auto mx-auto"
-                  data-testid="img-karmapath-logo"
-                />
+              <div className="bg-gradient-to-br from-white/10 to-blue-500/20 backdrop-blur-lg rounded-3xl p-16 shadow-2xl border border-white/30 overflow-hidden">
+                {/* Career Path Visualization */}
+                <div className="relative w-80 h-80">
+                  {/* Central Hub */}
+                  <div className="absolute top-1/2 left-1/2 transform -translate-x-1/2 -translate-y-1/2 w-20 h-20 bg-gradient-to-r from-yellow-400 to-orange-500 rounded-full flex items-center justify-center animate-pulse shadow-xl">
+                    <Star className="w-10 h-10 text-white animate-spin" style={{animationDuration: '8s'}} />
+                  </div>
+                  
+                  {/* Orbiting Career Elements */}
+                  <div className="absolute top-1/2 left-1/2 w-60 h-60 transform -translate-x-1/2 -translate-y-1/2">
+                    <div className="relative w-full h-full animate-spin" style={{animationDuration: '20s'}}>
+                      {/* Career Growth */}
+                      <div className="absolute top-0 left-1/2 transform -translate-x-1/2 -translate-y-1/2 w-12 h-12 bg-gradient-to-r from-green-400 to-blue-500 rounded-full flex items-center justify-center shadow-lg">
+                        <TrendingUp className="w-6 h-6 text-white" />
+                      </div>
+                      
+                      {/* Leadership */}
+                      <div className="absolute top-1/2 right-0 transform translate-x-1/2 -translate-y-1/2 w-12 h-12 bg-gradient-to-r from-purple-400 to-pink-500 rounded-full flex items-center justify-center shadow-lg">
+                        <Users className="w-6 h-6 text-white" />
+                      </div>
+                      
+                      {/* Innovation */}
+                      <div className="absolute bottom-0 left-1/2 transform -translate-x-1/2 translate-y-1/2 w-12 h-12 bg-gradient-to-r from-cyan-400 to-blue-500 rounded-full flex items-center justify-center shadow-lg">
+                        <Sparkles className="w-6 h-6 text-white" />
+                      </div>
+                      
+                      {/* Success */}
+                      <div className="absolute top-1/2 left-0 transform -translate-x-1/2 -translate-y-1/2 w-12 h-12 bg-gradient-to-r from-yellow-400 to-red-500 rounded-full flex items-center justify-center shadow-lg">
+                        <Star className="w-6 h-6 text-white" />
+                      </div>
+                    </div>
+                  </div>
+                  
+                  {/* Connecting Lines Animation */}
+                  <svg className="absolute inset-0 w-full h-full" viewBox="0 0 320 320">
+                    <circle
+                      cx="160"
+                      cy="160"
+                      r="120"
+                      fill="none"
+                      stroke="rgba(255,255,255,0.3)"
+                      strokeWidth="2"
+                      strokeDasharray="10,5"
+                      className="animate-spin"
+                      style={{animationDuration: '15s', animationDirection: 'reverse'}}
+                    />
+                    <circle
+                      cx="160"
+                      cy="160"
+                      r="80"
+                      fill="none"
+                      stroke="rgba(255,255,255,0.2)"
+                      strokeWidth="1"
+                      strokeDasharray="5,10"
+                      className="animate-spin"
+                      style={{animationDuration: '10s'}}
+                    />
+                  </svg>
+                </div>
               </div>
             </div>
-            {/* Floating elements */}
-            <div className="absolute -top-10 -right-10 w-20 h-20 bg-white bg-opacity-20 rounded-full animate-float" style={{animationDelay: '-2s'}}></div>
-            <div className="absolute -bottom-10 -left-10 w-16 h-16 bg-white bg-opacity-20 rounded-full animate-float" style={{animationDelay: '-4s'}}></div>
-            <div className="absolute top-1/2 -left-20 w-12 h-12 bg-gradient-to-r from-blue-300 to-blue-200 rounded-full animate-float" style={{animationDelay: '-1s'}}></div>
-            <div className="absolute top-1/4 -right-16 w-8 h-8 bg-gradient-to-r from-white to-blue-100 rounded-full animate-float" style={{animationDelay: '-3s'}}></div>
+            
+            {/* Enhanced Floating Elements */}
+            <div className="absolute -top-10 -right-10 w-20 h-20 bg-gradient-to-r from-blue-400 to-purple-500 rounded-full animate-float shadow-xl" style={{animationDelay: '-2s'}}></div>
+            <div className="absolute -bottom-10 -left-10 w-16 h-16 bg-gradient-to-r from-green-400 to-blue-500 rounded-full animate-float shadow-xl" style={{animationDelay: '-4s'}}></div>
+            <div className="absolute top-1/2 -left-20 w-12 h-12 bg-gradient-to-r from-yellow-400 to-orange-500 rounded-full animate-float shadow-lg" style={{animationDelay: '-1s'}}></div>
+            <div className="absolute top-1/4 -right-16 w-8 h-8 bg-gradient-to-r from-pink-400 to-red-500 rounded-full animate-float shadow-lg" style={{animationDelay: '-3s'}}></div>
+            <div className="absolute bottom-1/4 right-10 w-6 h-6 bg-gradient-to-r from-cyan-400 to-blue-400 rounded-full animate-float shadow-md" style={{animationDelay: '-5s'}}></div>
+            <div className="absolute top-3/4 left-5 w-10 h-10 bg-gradient-to-r from-indigo-400 to-purple-400 rounded-full animate-float shadow-lg" style={{animationDelay: '-6s'}}></div>
           </div>
         </div>
       </div>

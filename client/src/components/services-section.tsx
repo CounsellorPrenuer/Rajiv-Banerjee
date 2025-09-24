@@ -54,13 +54,13 @@ export default function ServicesSection() {
   };
 
   return (
-    <section id="services" className="py-20 bg-background" data-testid="services-section">
+    <section id="services" className="py-20 mesh-gradient-bg" data-testid="services-section">
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
         <div className="text-center mb-16 scroll-animate">
-          <h2 className="text-4xl font-display font-bold text-foreground mb-4">
+          <h2 className="text-4xl md:text-5xl font-display font-bold text-white mb-4 animate-bounce-in">
             Comprehensive Career Solutions
           </h2>
-          <p className="text-xl text-muted-foreground max-w-3xl mx-auto">
+          <p className="text-xl text-blue-100 max-w-3xl mx-auto leading-relaxed">
             From individual guidance to enterprise workshops, discover services designed to unlock your potential and accelerate your career growth.
           </p>
         </div>
@@ -71,29 +71,36 @@ export default function ServicesSection() {
             return (
               <div 
                 key={service.serviceType}
-                className="service-card bg-card border border-border rounded-2xl p-8 shadow-lg hover:shadow-2xl scroll-animate"
+                className="interactive-card bg-gradient-to-br from-white via-blue-50 to-indigo-50 dark:from-gray-900 dark:via-gray-800 dark:to-gray-900 border-0 rounded-2xl p-8 shadow-lg hover:shadow-2xl scroll-animate relative overflow-hidden group"
                 style={{ animationDelay: `${index * 0.1}s` }}
                 data-testid={`service-card-${service.serviceType}`}
               >
-                <div className="w-16 h-16 bg-gradient-to-br from-primary to-accent rounded-xl flex items-center justify-center mb-6">
-                  <Icon className="text-2xl text-primary-foreground" size={24} />
+                {/* Animated background elements */}
+                <div className="absolute top-0 right-0 w-20 h-20 bg-gradient-to-br from-primary/20 to-accent/20 rounded-full -translate-y-10 translate-x-10 animate-sparkle group-hover:animate-glow-pulse"></div>
+                <div className="absolute bottom-0 left-0 w-16 h-16 bg-gradient-to-tr from-accent/10 to-primary/10 rounded-full translate-y-8 -translate-x-8 animate-sparkle" style={{animationDelay: `${index * 0.3}s`}}></div>
+                
+                <div className="relative z-10">
+                  <div className="w-16 h-16 bg-gradient-to-br from-primary via-accent to-primary rounded-xl flex items-center justify-center mb-6 animate-bounce-in group-hover:animate-glow-pulse" style={{animationDelay: `${index * 0.2}s`}}>
+                    <Icon className="text-2xl text-white animate-wave" size={24} style={{animationDelay: `${index * 0.1}s`}} />
+                  </div>
+                  <h3 className="text-xl font-display font-semibold text-card-foreground mb-4 group-hover:gradient-text transition-all duration-300">
+                    {service.title}
+                  </h3>
+                  <p className="text-muted-foreground mb-6 leading-relaxed">
+                    {service.description}
+                  </p>
+                  <div className="text-2xl font-bold gradient-text mb-6 animate-bounce-in" style={{animationDelay: `${index * 0.3}s`}}>
+                    {service.price}
+                  </div>
+                  <Button 
+                    className="w-full bg-gradient-to-r from-primary via-accent to-primary text-white py-3 rounded-lg font-medium hover:from-accent hover:via-primary hover:to-accent transition-all duration-500 transform hover:scale-105 animate-glow-pulse group-hover:animate-gradient-shift shadow-lg hover:shadow-xl"
+                    onClick={() => handleLearnMore(service.serviceType)}
+                    data-testid={`button-learn-more-${service.serviceType}`}
+                    style={{animationDelay: `${index * 0.4}s`}}
+                  >
+                    Learn More
+                  </Button>
                 </div>
-                <h3 className="text-xl font-display font-semibold text-card-foreground mb-4">
-                  {service.title}
-                </h3>
-                <p className="text-muted-foreground mb-6">
-                  {service.description}
-                </p>
-                <div className="text-primary font-semibold mb-4">
-                  {service.price}
-                </div>
-                <Button 
-                  className="w-full bg-primary text-primary-foreground py-3 rounded-lg font-medium hover:bg-opacity-90 transition-all duration-300"
-                  onClick={() => handleLearnMore(service.serviceType)}
-                  data-testid={`button-learn-more-${service.serviceType}`}
-                >
-                  Learn More
-                </Button>
               </div>
             );
           })}

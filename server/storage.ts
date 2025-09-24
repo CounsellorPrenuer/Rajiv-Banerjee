@@ -9,11 +9,14 @@ import {
   type InsertBlogPost,
   type Testimonial,
   type InsertTestimonial,
+  type Service,
+  type InsertService,
   users,
   contacts,
   payments,
   blogPosts,
-  testimonials
+  testimonials,
+  services
 } from "@shared/schema";
 import { randomUUID } from "crypto";
 import { db } from "./db";
@@ -38,6 +41,12 @@ export interface IStorage {
   getTestimonials(): Promise<Testimonial[]>;
   getFeaturedTestimonials(): Promise<Testimonial[]>;
   createTestimonial(testimonial: InsertTestimonial): Promise<Testimonial>;
+  
+  getServices(): Promise<Service[]>;
+  getService(id: string): Promise<Service | undefined>;
+  createService(service: InsertService): Promise<Service>;
+  updateService(id: string, updates: Partial<Service>): Promise<Service | undefined>;
+  deleteService(id: string): Promise<boolean>;
 }
 
 export class DatabaseStorage implements IStorage {
@@ -141,6 +150,37 @@ export class DatabaseStorage implements IStorage {
       .returning();
     return testimonial;
   }
+
+  async getServices(): Promise<Service[]> {
+    return await db.select().from(services).orderBy(desc(services.createdAt));
+  }
+
+  async getService(id: string): Promise<Service | undefined> {
+    const [service] = await db.select().from(services).where(eq(services.id, id));
+    return service || undefined;
+  }
+
+  async createService(insertService: InsertService): Promise<Service> {
+    const [service] = await db
+      .insert(services)
+      .values(insertService)
+      .returning();
+    return service;
+  }
+
+  async updateService(id: string, updates: Partial<Service>): Promise<Service | undefined> {
+    const [service] = await db
+      .update(services)
+      .set({ ...updates, updatedAt: new Date() })
+      .where(eq(services.id, id))
+      .returning();
+    return service || undefined;
+  }
+
+  async deleteService(id: string): Promise<boolean> {
+    const result = await db.delete(services).where(eq(services.id, id));
+    return result.rowCount > 0;
+  }
 }
 
 export class MemStorage implements IStorage {
@@ -149,6 +189,7 @@ export class MemStorage implements IStorage {
   private payments: Map<string, Payment>;
   private blogPosts: Map<string, BlogPost>;
   private testimonials: Map<string, Testimonial>;
+  private services: Map<string, Service>;
 
   constructor() {
     this.users = new Map();
@@ -156,6 +197,7 @@ export class MemStorage implements IStorage {
     this.payments = new Map();
     this.blogPosts = new Map();
     this.testimonials = new Map();
+    this.services = new Map();
     
     // Initialize with sample data
     this.initializeSampleData();
@@ -365,6 +407,46 @@ export class MemStorage implements IStorage {
     };
     this.testimonials.set(id, testimonial);
     return testimonial;
+  }
+
+  async getServices(): Promise<Service[]> {
+    return Array.from(this.services.values()).sort(
+      (a, b) => b.createdAt.getTime() - a.createdAt.getTime()
+    );
+  }
+
+  async getService(id: string): Promise<Service | undefined> {
+    return this.services.get(id);
+  }
+
+  async createService(insertService: InsertService): Promise<Service> {
+    const id = randomUUID();
+    const service: Service = { 
+      ...insertService, 
+      id, 
+      createdAt: new Date(),
+      updatedAt: new Date()
+    };
+    this.services.set(id, service);
+    return service;
+  }
+
+  async updateService(id: string, updates: Partial<Service>): Promise<Service | undefined> {
+    const existingService = this.services.get(id);
+    if (!existingService) return undefined;
+    
+    const updatedService: Service = { 
+      ...existingService, 
+      ...updates, 
+      id, 
+      updatedAt: new Date() 
+    };
+    this.services.set(id, updatedService);
+    return updatedService;
+  }
+
+  async deleteService(id: string): Promise<boolean> {
+    return this.services.delete(id);
   }
 }
 
