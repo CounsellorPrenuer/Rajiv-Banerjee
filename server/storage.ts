@@ -32,6 +32,7 @@ export interface IStorage {
   
   createPayment(payment: InsertPayment): Promise<Payment>;
   getPayment(id: string): Promise<Payment | undefined>;
+  getAllPayments(): Promise<Payment[]>;
   updatePayment(id: string, updates: Partial<Payment>): Promise<Payment | undefined>;
   
   getBlogPosts(): Promise<BlogPost[]>;
@@ -102,6 +103,10 @@ export class DatabaseStorage implements IStorage {
   async getPayment(id: string): Promise<Payment | undefined> {
     const [payment] = await db.select().from(payments).where(eq(payments.id, id));
     return payment || undefined;
+  }
+
+  async getAllPayments(): Promise<Payment[]> {
+    return await db.select().from(payments).orderBy(desc(payments.createdAt));
   }
 
   async updatePayment(id: string, updates: Partial<Payment>): Promise<Payment | undefined> {
@@ -385,6 +390,12 @@ export class MemStorage implements IStorage {
 
   async getPayment(id: string): Promise<Payment | undefined> {
     return this.payments.get(id);
+  }
+
+  async getAllPayments(): Promise<Payment[]> {
+    return Array.from(this.payments.values()).sort((a, b) => 
+      new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime()
+    );
   }
 
   async updatePayment(id: string, updates: Partial<Payment>): Promise<Payment | undefined> {

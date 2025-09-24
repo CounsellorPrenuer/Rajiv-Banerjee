@@ -14,13 +14,12 @@ import { Phone, Mail, Globe, Send, CreditCard, Linkedin, Instagram } from "lucid
 import { FaXTwitter } from "react-icons/fa6";
 
 const contactSchema = z.object({
-  firstName: z.string().min(1, "Name is required"),
-  lastName: z.string().optional(),
+  firstName: z.string().min(1, "First name is required"),
+  lastName: z.string().min(1, "Last name is required"),
   email: z.string().email("Invalid email address"),
   phone: z.string().min(10, "Phone number must be at least 10 digits"),
-  whoIsThisFor: z.string().min(1, "Please specify who this is for"),
   serviceInterest: z.string().min(1, "Please select a service"),
-  message: z.string().optional(),
+  message: z.string().min(10, "Please provide a message"),
 });
 
 type ContactForm = z.infer<typeof contactSchema>;
@@ -267,7 +266,7 @@ export default function ContactSection() {
               <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
                 <div>
                   <Label htmlFor="firstName" className="block text-sm font-medium text-foreground mb-2">
-                    First Name
+                    First Name *
                   </Label>
                   <Input
                     id="firstName"
@@ -282,7 +281,7 @@ export default function ContactSection() {
                 </div>
                 <div>
                   <Label htmlFor="lastName" className="block text-sm font-medium text-foreground mb-2">
-                    Last Name
+                    Last Name *
                   </Label>
                   <Input
                     id="lastName"
@@ -299,7 +298,7 @@ export default function ContactSection() {
               
               <div>
                 <Label htmlFor="email" className="block text-sm font-medium text-foreground mb-2">
-                  Email
+                  Email *
                 </Label>
                 <Input
                   id="email"
@@ -316,7 +315,7 @@ export default function ContactSection() {
               
               <div>
                 <Label htmlFor="phone" className="block text-sm font-medium text-foreground mb-2">
-                  Phone
+                  Phone *
                 </Label>
                 <Input
                   id="phone"
@@ -331,29 +330,10 @@ export default function ContactSection() {
                 )}
               </div>
               
-              <div>
-                <Label htmlFor="whoIsThisFor" className="block text-sm font-medium text-foreground mb-2">
-                  Who is this for? *
-                </Label>
-                <Select onValueChange={(value) => setValue("whoIsThisFor", value)} data-testid="select-who-is-this-for">
-                  <SelectTrigger className="w-full px-4 py-3 border border-input rounded-lg focus:ring-2 focus:ring-ring focus:border-transparent transition-all duration-300">
-                    <SelectValue placeholder="Select who this is for" />
-                  </SelectTrigger>
-                  <SelectContent>
-                    <SelectItem value="Student">Student</SelectItem>
-                    <SelectItem value="Parent">Parent</SelectItem>
-                    <SelectItem value="Professional">Professional</SelectItem>
-                    <SelectItem value="Corporate">Corporate</SelectItem>
-                  </SelectContent>
-                </Select>
-                {errors.whoIsThisFor && (
-                  <p className="text-destructive text-sm mt-1">{errors.whoIsThisFor.message}</p>
-                )}
-              </div>
               
               <div>
                 <Label htmlFor="serviceInterest" className="block text-sm font-medium text-foreground mb-2">
-                  Service Interest
+                  Service Interest *
                 </Label>
                 <Select onValueChange={(value) => setValue("serviceInterest", value)} data-testid="select-service">
                   <SelectTrigger className="w-full px-4 py-3 border border-input rounded-lg focus:ring-2 focus:ring-ring focus:border-transparent transition-all duration-300">
@@ -373,7 +353,7 @@ export default function ContactSection() {
               
               <div>
                 <Label htmlFor="message" className="block text-sm font-medium text-foreground mb-2">
-                  Message (Optional)
+                  Message *
                 </Label>
                 <Textarea
                   id="message"

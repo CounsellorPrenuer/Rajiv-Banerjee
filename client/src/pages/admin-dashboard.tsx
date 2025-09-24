@@ -104,9 +104,9 @@ export function AdminDashboardPage() {
     queryKey: ["/api/services"],
   }) as { data: Service[] };
 
-  // Fetch contacts
+  // Fetch contacts for admin (all contacts)
   const { data: contacts = [] } = useQuery({
-    queryKey: ["/api/contacts"],
+    queryKey: ["/api/admin/contacts"],
   }) as { data: any[] };
 
   // Fetch blog posts for admin (all posts)
@@ -118,6 +118,23 @@ export function AdminDashboardPage() {
   const { data: testimonials = [] } = useQuery({
     queryKey: ["/api/admin/testimonials"],
   }) as { data: Testimonial[] };
+
+  // Fetch payments for admin (all payments)
+  const { data: payments = [] } = useQuery({
+    queryKey: ["/api/admin/payments"],
+  }) as { data: any[] };
+
+  // Calculate payment statistics
+  const completedPayments = payments.filter(p => p.status === 'completed');
+  const totalRevenue = completedPayments.reduce((sum, payment) => sum + Number(payment.amount), 0);
+  
+  const currentMonth = new Date().getMonth();
+  const currentYear = new Date().getFullYear();
+  const thisMonthPayments = completedPayments.filter(payment => {
+    const paymentDate = new Date(payment.createdAt);
+    return paymentDate.getMonth() === currentMonth && paymentDate.getFullYear() === currentYear;
+  });
+  const thisMonthRevenue = thisMonthPayments.reduce((sum, payment) => sum + Number(payment.amount), 0);
 
   const handleLogout = async () => {
     try {
@@ -478,7 +495,7 @@ export function AdminDashboardPage() {
             <CardContent>
               <div className="text-2xl font-bold">{contacts.length}</div>
               <p className="text-xs text-muted-foreground">
-                +{Math.floor(contacts.length * 0.15)} from last week
+                Active inquiries
               </p>
             </CardContent>
           </Card>
@@ -588,26 +605,6 @@ export function AdminDashboardPage() {
             </CardContent>
           </Card>
 
-          <Card>
-            <CardHeader>
-              <CardTitle className="flex items-center gap-2">
-                <BarChart3 className="h-5 w-5" />
-                Analytics
-              </CardTitle>
-              <CardDescription>
-                View website performance and user engagement
-              </CardDescription>
-            </CardHeader>
-            <CardContent>
-              <Button 
-                className="w-full" 
-                onClick={() => setActiveSection('analytics')}
-                data-testid="button-view-analytics"
-              >
-                View Analytics
-              </Button>
-            </CardContent>
-          </Card>
 
           <Card>
             <CardHeader>
@@ -662,7 +659,6 @@ export function AdminDashboardPage() {
                   {activeSection === 'contacts' && 'Contact Management'}
                   {activeSection === 'payments' && 'Payment Tracking'}
                   {activeSection === 'content' && 'Content Management'}
-                  {activeSection === 'analytics' && 'Analytics Dashboard'}
                   {activeSection === 'testimonials' && 'Testimonial Management'}
                 </CardTitle>
                 <Button variant="outline" onClick={() => setActiveSection(null)}>
@@ -822,7 +818,7 @@ export function AdminDashboardPage() {
                         <div className="flex items-center justify-between">
                           <div>
                             <p className="text-sm text-green-600">Total Revenue</p>
-                            <p className="text-2xl font-bold text-green-800">₹2,45,000</p>
+                            <p className="text-2xl font-bold text-green-800">₹{totalRevenue.toLocaleString()}</p>
                           </div>
                           <div className="w-12 h-12 bg-green-200 rounded-full flex items-center justify-center">
                             <CreditCard className="w-6 h-6 text-green-600" />
@@ -836,7 +832,7 @@ export function AdminDashboardPage() {
                         <div className="flex items-center justify-between">
                           <div>
                             <p className="text-sm text-blue-600">This Month</p>
-                            <p className="text-2xl font-bold text-blue-800">₹45,000</p>
+                            <p className="text-2xl font-bold text-blue-800">₹{thisMonthRevenue.toLocaleString()}</p>
                           </div>
                           <div className="w-12 h-12 bg-blue-200 rounded-full flex items-center justify-center">
                             <BarChart3 className="w-6 h-6 text-blue-600" />
@@ -850,7 +846,7 @@ export function AdminDashboardPage() {
                         <div className="flex items-center justify-between">
                           <div>
                             <p className="text-sm text-purple-600">Transactions</p>
-                            <p className="text-2xl font-bold text-purple-800">127</p>
+                            <p className="text-2xl font-bold text-purple-800">{payments.length}</p>
                           </div>
                           <div className="w-12 h-12 bg-purple-200 rounded-full flex items-center justify-center">
                             <Users className="w-6 h-6 text-purple-600" />
@@ -867,53 +863,41 @@ export function AdminDashboardPage() {
                     </CardHeader>
                     <CardContent>
                       <div className="space-y-4">
-                        <div className="flex items-center justify-between p-4 border rounded-lg">
-                          <div className="flex items-center space-x-4">
-                            <div className="w-10 h-10 bg-green-100 rounded-full flex items-center justify-center">
-                              <span className="text-green-600 font-semibold">₹</span>
+                        {payments.slice(0, 5).map((payment: any, index: number) => (
+                          <div key={payment.id || index} className="flex items-center justify-between p-4 border rounded-lg">
+                            <div className="flex items-center space-x-4">
+                              <div className={`w-10 h-10 rounded-full flex items-center justify-center ${
+                                payment.status === 'completed' ? 'bg-green-100' : 
+                                payment.status === 'created' ? 'bg-yellow-100' : 'bg-gray-100'
+                              }`}>
+                                <span className={`font-semibold ${
+                                  payment.status === 'completed' ? 'text-green-600' : 
+                                  payment.status === 'created' ? 'text-yellow-600' : 'text-gray-600'
+                                }`}>₹</span>
+                              </div>
+                              <div>
+                                <p className="font-semibold">{payment.serviceType || 'Service'}</p>
+                                <p className="text-sm text-gray-600">
+                                  Order ID: {payment.razorpayOrderId?.substring(0, 20)}...
+                                </p>
+                              </div>
                             </div>
-                            <div>
-                              <p className="font-semibold">Career Guidance Session</p>
-                              <p className="text-sm text-gray-600">John Doe - john@example.com</p>
-                            </div>
-                          </div>
-                          <div className="text-right">
-                            <p className="font-semibold">₹2,999</p>
-                            <p className="text-sm text-green-600">Completed</p>
-                          </div>
-                        </div>
-                        
-                        <div className="flex items-center justify-between p-4 border rounded-lg">
-                          <div className="flex items-center space-x-4">
-                            <div className="w-10 h-10 bg-blue-100 rounded-full flex items-center justify-center">
-                              <span className="text-blue-600 font-semibold">₹</span>
-                            </div>
-                            <div>
-                              <p className="font-semibold">Agile Coaching Workshop</p>
-                              <p className="text-sm text-gray-600">Sarah Smith - sarah@company.com</p>
-                            </div>
-                          </div>
-                          <div className="text-right">
-                            <p className="font-semibold">₹4,999</p>
-                            <p className="text-sm text-green-600">Completed</p>
-                          </div>
-                        </div>
-                        
-                        <div className="flex items-center justify-between p-4 border rounded-lg">
-                          <div className="flex items-center space-x-4">
-                            <div className="w-10 h-10 bg-purple-100 rounded-full flex items-center justify-center">
-                              <span className="text-purple-600 font-semibold">₹</span>
-                            </div>
-                            <div>
-                              <p className="font-semibold">Corporate Workshop</p>
-                              <p className="text-sm text-gray-600">Tech Corp - hr@techcorp.com</p>
+                            <div className="text-right">
+                              <p className="font-semibold">₹{Number(payment.amount).toLocaleString()}</p>
+                              <p className={`text-sm capitalize ${
+                                payment.status === 'completed' ? 'text-green-600' : 
+                                payment.status === 'created' ? 'text-yellow-600' : 'text-gray-600'
+                              }`}>
+                                {payment.status}
+                              </p>
                             </div>
                           </div>
-                          <div className="text-right">
-                            <p className="font-semibold">₹19,999</p>
-                            <p className="text-sm text-yellow-600">Processing</p>
+                        ))}
+                        {payments.length === 0 && (
+                          <div className="text-center py-8 text-gray-500">
+                            No payments yet. Payments will appear here once customers make bookings.
                           </div>
-                        </div>
+                        )}
                       </div>
                     </CardContent>
                   </Card>
@@ -1275,13 +1259,6 @@ export function AdminDashboardPage() {
                 </div>
               )}
 
-              {activeSection === 'analytics' && (
-                <div className="text-center py-8">
-                  <BarChart3 className="w-16 h-16 mx-auto text-gray-400 mb-4" />
-                  <h3 className="text-lg font-semibold mb-2">Analytics Dashboard</h3>
-                  <p className="text-gray-600">Advanced analytics and reporting features coming soon.</p>
-                </div>
-              )}
 
               {activeSection === 'testimonials' && (
                 <div className="space-y-4">
@@ -1316,36 +1293,6 @@ export function AdminDashboardPage() {
           </Card>
         )}
 
-        {/* Recent Activity */}
-        {!activeSection && (
-          <Card className="mt-8">
-            <CardHeader>
-              <CardTitle>Recent Activity</CardTitle>
-              <CardDescription>
-                Latest actions and updates across the platform
-              </CardDescription>
-            </CardHeader>
-            <CardContent>
-              <div className="space-y-4">
-                <div className="flex items-center gap-3">
-                  <div className="w-2 h-2 bg-green-500 rounded-full"></div>
-                  <span className="text-sm">New contact form submission received</span>
-                  <span className="text-xs text-muted-foreground ml-auto">2 hours ago</span>
-                </div>
-                <div className="flex items-center gap-3">
-                  <div className="w-2 h-2 bg-blue-500 rounded-full"></div>
-                  <span className="text-sm">Service pricing updated</span>
-                  <span className="text-xs text-muted-foreground ml-auto">5 hours ago</span>
-                </div>
-                <div className="flex items-center gap-3">
-                  <div className="w-2 h-2 bg-purple-500 rounded-full"></div>
-                  <span className="text-sm">New testimonial added</span>
-                  <span className="text-xs text-muted-foreground ml-auto">1 day ago</span>
-                </div>
-              </div>
-            </CardContent>
-          </Card>
-        )}
       </main>
     </div>
   );
