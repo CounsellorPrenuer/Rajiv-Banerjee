@@ -26,10 +26,17 @@ export default function Home() {
       });
     }, observerOptions);
     
-    // Observe all scroll-animate elements
-    document.querySelectorAll('.scroll-animate').forEach(el => {
-      observer.observe(el);
-    });
+    // Wait for the DOM to be ready and then observe elements
+    const setupObserver = () => {
+      const elements = document.querySelectorAll('.scroll-animate');
+      elements.forEach(el => {
+        observer.observe(el);
+      });
+    };
+
+    // Setup observer immediately and also after a small delay to catch dynamically rendered content
+    setupObserver();
+    const timeoutId = setTimeout(setupObserver, 1000);
 
     // Smooth scrolling for navigation links
     document.querySelectorAll('a[href^="#"]').forEach(anchor => {
@@ -47,6 +54,7 @@ export default function Home() {
 
     return () => {
       observer.disconnect();
+      clearTimeout(timeoutId);
     };
   }, []);
 

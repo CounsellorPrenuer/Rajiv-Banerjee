@@ -64,7 +64,7 @@ export default function HeroSection() {
           <div className="relative">
             {/* Animated Graphics Container */}
             <div className="relative z-10 animate-float flex items-center justify-center">
-              <div className="bg-gradient-to-br from-white/10 to-blue-500/20 backdrop-blur-lg rounded-3xl p-16 shadow-2xl border border-white/30 overflow-hidden">
+              <div className="">
                 {/* Career Path Visualization */}
                 <div className="relative w-80 h-80">
                   {/* Central Hub */}

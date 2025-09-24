@@ -54,7 +54,7 @@ export default function BlogSection() {
   }
 
   return (
-    <section id="blog" className="py-20 bg-muted" data-testid="blog-section">
+    <section id="blog" className="py-20 bg-gradient-to-br from-indigo-50 via-white to-blue-50 dark:from-gray-900 dark:via-gray-800 dark:to-gray-900" data-testid="blog-section">
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
         <div className="text-center mb-16 scroll-animate">
           <h2 className="text-4xl font-display font-bold text-foreground mb-4">
