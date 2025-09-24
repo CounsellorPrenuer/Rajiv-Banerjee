@@ -295,11 +295,19 @@ export async function registerRoutes(app: Express): Promise<Server> {
     try {
       const { serviceType, contactInfo } = req.body;
       
-      if (!SERVICE_PRICING[serviceType as keyof typeof SERVICE_PRICING]) {
+      // Find service in database by matching serviceType
+      const services = await storage.getServices();
+      const service = services.find((s: any) => {
+        const generatedServiceType = s.name.toLowerCase().replace(/\s+/g, '-');
+        return generatedServiceType === serviceType;
+      });
+
+      if (!service) {
         return res.status(400).json({ error: "Invalid service type" });
       }
 
-      const service = SERVICE_PRICING[serviceType as keyof typeof SERVICE_PRICING];
+      // Convert price from rupees to paise (multiply by 100)
+      const amountInPaise = Math.round(parseFloat(service.price) * 100);
       
       // Create contact record
       const validatedContact = insertContactSchema.parse(contactInfo);
@@ -307,7 +315,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
 
       // Create Razorpay order
       const options = {
-        amount: service.amount, // amount in paise
+        amount: amountInPaise, // amount in paise
         currency: 'INR',
         receipt: `receipt_${Date.now()}`,
         payment_capture: 1
@@ -317,7 +325,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
       
       const payment = await storage.createPayment({
         razorpayOrderId: order.id,
-        amount: service.amount.toString(),
+        amount: amountInPaise.toString(),
         currency: "INR",
         status: "created",
         contactId: contact.id,
@@ -327,7 +335,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
 
       res.json({
         orderId: order.id,
-        amount: service.amount,
+        amount: amountInPaise,
         currency: "INR",
         keyId: RAZORPAY_KEY_ID,
         paymentId: payment.id

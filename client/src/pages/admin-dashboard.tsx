@@ -306,7 +306,7 @@ export function AdminDashboardPage() {
 
   const handleUpdateService = useMutation({
     mutationFn: async (data: any) => {
-      return apiRequest("PUT", `/api/services/${data.id}`, data);
+      return apiRequest("PUT", `/api/admin/services/${data.id}`, data);
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ["/api/services"] });

@@ -1,5 +1,5 @@
 import { useState, useEffect } from "react";
-import { useMutation } from "@tanstack/react-query";
+import { useMutation, useQuery } from "@tanstack/react-query";
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -28,38 +28,41 @@ interface BookingModalProps {
   selectedService: string;
 }
 
-// Service mapping for display
-const serviceMapping: Record<string, { name: string; price: string }> = {
-  "career-guidance": { name: "Career Guidance", price: "₹2,999" },
-  "agile-coaching": { name: "Agile Coaching", price: "₹4,999" },
-  "corporate-workshops": { name: "Corporate Workshops", price: "₹19,999" },
-  "enterprise-mentoring": { name: "Enterprise Mentoring", price: "Custom Pricing" }
-};
-
 export default function BookingModal({ isOpen, onClose, selectedService }: BookingModalProps) {
   const [isProcessing, setIsProcessing] = useState(false);
   const { toast } = useToast();
+
+  // Fetch services from API
+  const { data: services = [] } = useQuery({
+    queryKey: ["/api/services"]
+  }) as { data: any[] };
+
+  // Find the current service by matching serviceType
+  const currentService = services.find((service: any) => {
+    const serviceType = service.name.toLowerCase().replace(/\s+/g, '-');
+    return serviceType === selectedService;
+  });
   
   const { register, handleSubmit, formState: { errors }, reset } = useForm<BookingFormData>({
     resolver: zodResolver(bookingFormSchema),
     defaultValues: {
-      serviceInterest: serviceMapping[selectedService]?.name || ""
+      serviceInterest: currentService?.name || ""
     }
   });
 
   // Reset form when selectedService changes to ensure serviceInterest is prefilled
   useEffect(() => {
-    if (selectedService && serviceMapping[selectedService]) {
+    if (selectedService && currentService) {
       reset({
         firstName: "",
         lastName: "",
         email: "",
         phone: "",
         message: "",
-        serviceInterest: serviceMapping[selectedService].name,
+        serviceInterest: currentService.name,
       });
     }
-  }, [selectedService, reset]);
+  }, [selectedService, currentService, reset]);
 
   // Create payment order mutation
   const createOrderMutation = useMutation({
@@ -100,7 +103,7 @@ export default function BookingModal({ isOpen, onClose, selectedService }: Booki
         currency: orderResponse.currency,
         order_id: orderResponse.orderId,
         name: "KarmaPath Career Coaching",
-        description: `Payment for ${serviceMapping[selectedService]?.name}`,
+        description: `Payment for ${currentService?.name || selectedService}`,
         image: "/favicon.ico",
         handler: async function (response: any) {
           try {
@@ -187,7 +190,7 @@ export default function BookingModal({ isOpen, onClose, selectedService }: Booki
     onClose();
   };
 
-  const selectedServiceDetails = serviceMapping[selectedService];
+  const selectedServiceDetails = currentService;
 
   return (
     <Dialog open={isOpen} onOpenChange={handleClose}>
