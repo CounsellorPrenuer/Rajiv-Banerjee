@@ -32,7 +32,7 @@ export default function Navigation() {
             <img 
               src={karmaPathLogo}
               alt="KarmaPath Logo" 
-              className="h-10 w-auto"
+              className="h-14 w-auto"
               data-testid="nav-logo"
             />
           </div>

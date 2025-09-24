@@ -122,15 +122,6 @@ export default function MentoriaSection() {
             </Card>
           </div>
         </div>
-
-        <div className="text-center scroll-animate">
-          <div className="inline-flex items-center px-6 py-3 bg-white dark:bg-gray-800 rounded-full border border-primary/20 shadow-sm">
-            <span className="text-sm text-muted-foreground mr-2">Made with</span>
-            <div className="w-4 h-4 text-red-500 mx-1">❤️</div>
-            <span className="text-sm text-muted-foreground mr-2">by</span>
-            <strong className="text-primary font-semibold">Mentoria</strong>
-          </div>
-        </div>
       </div>
     </section>
   );
