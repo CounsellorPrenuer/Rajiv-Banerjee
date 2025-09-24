@@ -1,5 +1,7 @@
+import { useState } from "react";
 import { Button } from "@/components/ui/button";
 import { Compass, RotateCcw, Users, TrendingUp } from "lucide-react";
+import BookingModal from "./booking-modal.tsx";
 
 const services = [
   {
@@ -33,24 +35,12 @@ const services = [
 ];
 
 export default function ServicesSection() {
-  const handleLearnMore = (serviceType: string) => {
-    // Navigate to contact section with service pre-selected
-    const contactSection = document.querySelector('#contact');
-    const serviceSelect = document.querySelector('select[name="serviceInterest"]') as HTMLSelectElement;
-    
-    if (contactSection) {
-      contactSection.scrollIntoView({ behavior: 'smooth' });
-      
-      // Set the service type after a small delay to ensure the component is rendered
-      setTimeout(() => {
-        if (serviceSelect) {
-          const serviceTitle = services.find(s => s.serviceType === serviceType)?.title;
-          if (serviceTitle) {
-            serviceSelect.value = serviceTitle;
-          }
-        }
-      }, 500);
-    }
+  const [isBookingModalOpen, setIsBookingModalOpen] = useState(false);
+  const [selectedService, setSelectedService] = useState<string>("");
+
+  const handleBookNow = (serviceType: string) => {
+    setSelectedService(serviceType);
+    setIsBookingModalOpen(true);
   };
 
   return (
@@ -94,11 +84,11 @@ export default function ServicesSection() {
                   </div>
                   <Button 
                     className="w-full bg-gradient-to-r from-primary via-accent to-primary text-white py-3 rounded-lg font-medium hover:from-accent hover:via-primary hover:to-accent transition-all duration-500 transform hover:scale-105 animate-glow-pulse group-hover:animate-gradient-shift shadow-lg hover:shadow-xl"
-                    onClick={() => handleLearnMore(service.serviceType)}
-                    data-testid={`button-learn-more-${service.serviceType}`}
+                    onClick={() => handleBookNow(service.serviceType)}
+                    data-testid={`button-book-now-${service.serviceType}`}
                     style={{animationDelay: `${index * 0.4}s`}}
                   >
-                    Learn More
+                    Book Now
                   </Button>
                 </div>
               </div>
@@ -106,6 +96,12 @@ export default function ServicesSection() {
           })}
         </div>
       </div>
+      
+      <BookingModal 
+        isOpen={isBookingModalOpen}
+        onClose={() => setIsBookingModalOpen(false)}
+        selectedService={selectedService}
+      />
     </section>
   );
 }

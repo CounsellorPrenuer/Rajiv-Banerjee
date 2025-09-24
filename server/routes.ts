@@ -1,7 +1,7 @@
 import type { Express } from "express";
 import { createServer, type Server } from "http";
 import { storage } from "./storage";
-import { insertContactSchema, insertPaymentSchema, adminLoginSchema } from "@shared/schema";
+import { insertContactSchema, insertPaymentSchema, adminLoginSchema, insertBlogPostSchema, insertTestimonialSchema, insertServiceSchema } from "@shared/schema";
 import { z } from "zod";
 import Razorpay from "razorpay";
 import crypto from "crypto";
@@ -122,7 +122,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
     });
   });
 
-  // Get blog posts
+  // Public blog posts endpoint (published only)
   app.get("/api/blog-posts", async (req, res) => {
     try {
       const posts = await storage.getBlogPosts();
@@ -133,7 +133,70 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
-  // Get featured testimonials
+  // Admin blog posts endpoints
+  app.get("/api/admin/blog-posts", requireAuth, async (req, res) => {
+    try {
+      const posts = await storage.getAllBlogPosts();
+      res.json(posts);
+    } catch (error) {
+      console.error("Error fetching all blog posts:", error);
+      res.status(500).json({ error: "Failed to fetch blog posts" });
+    }
+  });
+
+  app.post("/api/admin/blog-posts", requireAuth, async (req, res) => {
+    try {
+      const validatedData = insertBlogPostSchema.parse(req.body);
+      const post = await storage.createBlogPost(validatedData);
+      res.json(post);
+    } catch (error) {
+      if (error instanceof z.ZodError) {
+        res.status(400).json({ error: "Validation failed", details: error.errors });
+      } else {
+        console.error("Error creating blog post:", error);
+        res.status(500).json({ error: "Failed to create blog post" });
+      }
+    }
+  });
+
+  app.put("/api/admin/blog-posts/:id", requireAuth, async (req, res) => {
+    try {
+      const { id } = req.params;
+      const validatedData = insertBlogPostSchema.partial().parse(req.body);
+      const post = await storage.updateBlogPost(id, validatedData);
+      
+      if (!post) {
+        return res.status(404).json({ error: "Blog post not found" });
+      }
+      
+      res.json(post);
+    } catch (error) {
+      if (error instanceof z.ZodError) {
+        res.status(400).json({ error: "Validation failed", details: error.errors });
+      } else {
+        console.error("Error updating blog post:", error);
+        res.status(500).json({ error: "Failed to update blog post" });
+      }
+    }
+  });
+
+  app.delete("/api/admin/blog-posts/:id", requireAuth, async (req, res) => {
+    try {
+      const { id } = req.params;
+      const success = await storage.deleteBlogPost(id);
+      
+      if (!success) {
+        return res.status(404).json({ error: "Blog post not found" });
+      }
+      
+      res.json({ success: true, message: "Blog post deleted successfully" });
+    } catch (error) {
+      console.error("Error deleting blog post:", error);
+      res.status(500).json({ error: "Failed to delete blog post" });
+    }
+  });
+
+  // Public testimonials endpoint (featured only)
   app.get("/api/testimonials", async (req, res) => {
     try {
       const testimonials = await storage.getFeaturedTestimonials();
@@ -141,6 +204,69 @@ export async function registerRoutes(app: Express): Promise<Server> {
     } catch (error) {
       console.error("Error fetching testimonials:", error);
       res.status(500).json({ error: "Failed to fetch testimonials" });
+    }
+  });
+
+  // Admin testimonials endpoints
+  app.get("/api/admin/testimonials", requireAuth, async (req, res) => {
+    try {
+      const testimonials = await storage.getTestimonials();
+      res.json(testimonials);
+    } catch (error) {
+      console.error("Error fetching all testimonials:", error);
+      res.status(500).json({ error: "Failed to fetch testimonials" });
+    }
+  });
+
+  app.post("/api/admin/testimonials", requireAuth, async (req, res) => {
+    try {
+      const validatedData = insertTestimonialSchema.parse(req.body);
+      const testimonial = await storage.createTestimonial(validatedData);
+      res.json(testimonial);
+    } catch (error) {
+      if (error instanceof z.ZodError) {
+        res.status(400).json({ error: "Validation failed", details: error.errors });
+      } else {
+        console.error("Error creating testimonial:", error);
+        res.status(500).json({ error: "Failed to create testimonial" });
+      }
+    }
+  });
+
+  app.put("/api/admin/testimonials/:id", requireAuth, async (req, res) => {
+    try {
+      const { id } = req.params;
+      const validatedData = insertTestimonialSchema.partial().parse(req.body);
+      const testimonial = await storage.updateTestimonial(id, validatedData);
+      
+      if (!testimonial) {
+        return res.status(404).json({ error: "Testimonial not found" });
+      }
+      
+      res.json(testimonial);
+    } catch (error) {
+      if (error instanceof z.ZodError) {
+        res.status(400).json({ error: "Validation failed", details: error.errors });
+      } else {
+        console.error("Error updating testimonial:", error);
+        res.status(500).json({ error: "Failed to update testimonial" });
+      }
+    }
+  });
+
+  app.delete("/api/admin/testimonials/:id", requireAuth, async (req, res) => {
+    try {
+      const { id } = req.params;
+      const success = await storage.deleteTestimonial(id);
+      
+      if (!success) {
+        return res.status(404).json({ error: "Testimonial not found" });
+      }
+      
+      res.json({ success: true, message: "Testimonial deleted successfully" });
+    } catch (error) {
+      console.error("Error deleting testimonial:", error);
+      res.status(500).json({ error: "Failed to delete testimonial" });
     }
   });
 
@@ -313,13 +439,115 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
-  // Get service pricing
+  // Public services endpoint
+  app.get("/api/services", async (req, res) => {
+    try {
+      const services = await storage.getServices();
+      res.json(services);
+    } catch (error) {
+      console.error("Error fetching services:", error);
+      res.status(500).json({ error: "Failed to fetch services" });
+    }
+  });
+
+  // Admin services endpoints
+  app.get("/api/admin/services", requireAuth, async (req, res) => {
+    try {
+      const services = await storage.getServices();
+      res.json(services);
+    } catch (error) {
+      console.error("Error fetching services:", error);
+      res.status(500).json({ error: "Failed to fetch services" });
+    }
+  });
+
+  app.post("/api/admin/services", requireAuth, async (req, res) => {
+    try {
+      const validatedData = insertServiceSchema.parse(req.body);
+      const service = await storage.createService(validatedData);
+      res.json(service);
+    } catch (error) {
+      if (error instanceof z.ZodError) {
+        res.status(400).json({ error: "Validation failed", details: error.errors });
+      } else {
+        console.error("Error creating service:", error);
+        res.status(500).json({ error: "Failed to create service" });
+      }
+    }
+  });
+
+  app.put("/api/admin/services/:id", requireAuth, async (req, res) => {
+    try {
+      const { id } = req.params;
+      const validatedData = insertServiceSchema.partial().parse(req.body);
+      const service = await storage.updateService(id, validatedData);
+      
+      if (!service) {
+        return res.status(404).json({ error: "Service not found" });
+      }
+      
+      res.json(service);
+    } catch (error) {
+      if (error instanceof z.ZodError) {
+        res.status(400).json({ error: "Validation failed", details: error.errors });
+      } else {
+        console.error("Error updating service:", error);
+        res.status(500).json({ error: "Failed to update service" });
+      }
+    }
+  });
+
+  app.delete("/api/admin/services/:id", requireAuth, async (req, res) => {
+    try {
+      const { id } = req.params;
+      const success = await storage.deleteService(id);
+      
+      if (!success) {
+        return res.status(404).json({ error: "Service not found" });
+      }
+      
+      res.json({ success: true, message: "Service deleted successfully" });
+    } catch (error) {
+      console.error("Error deleting service:", error);
+      res.status(500).json({ error: "Failed to delete service" });
+    }
+  });
+
+  // Get service pricing (legacy endpoint for frontend compatibility)
   app.get("/api/services/pricing", async (req, res) => {
     try {
       res.json(SERVICE_PRICING);
     } catch (error) {
       console.error("Error fetching service pricing:", error);
       res.status(500).json({ error: "Failed to fetch service pricing" });
+    }
+  });
+
+  // Get payment status by ID
+  app.get("/api/payments/:id", async (req, res) => {
+    try {
+      const { id } = req.params;
+      const payment = await storage.getPayment(id);
+      
+      if (!payment) {
+        return res.status(404).json({ error: "Payment not found" });
+      }
+      
+      res.json(payment);
+    } catch (error) {
+      console.error("Error fetching payment:", error);
+      res.status(500).json({ error: "Failed to fetch payment" });
+    }
+  });
+
+  // Admin payment tracking endpoints  
+  app.get("/api/admin/contacts", requireAuth, async (req, res) => {
+    try {
+      const contacts = await storage.getContacts();
+      res.json(contacts);
+    } catch (error) {
+      console.error("Error fetching contacts:", error);
+      res.status(500).json({ error: "Failed to fetch contacts" });
     }
   });
 

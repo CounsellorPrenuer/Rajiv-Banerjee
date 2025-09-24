@@ -26,6 +26,31 @@ interface Service {
   category: string;
 }
 
+interface BlogPost {
+  id: string;
+  title: string;
+  slug: string;
+  excerpt: string;
+  content: string;
+  category: string;
+  imageUrl?: string;
+  published: boolean;
+  createdAt: string;
+  updatedAt: string;
+}
+
+interface Testimonial {
+  id: string;
+  name: string;
+  title: string;
+  company?: string;
+  content: string;
+  rating: number;
+  imageUrl?: string;
+  featured: boolean;
+  createdAt: string;
+}
+
 export function AdminDashboardPage() {
   const [, setLocation] = useLocation();
   const { toast } = useToast();
@@ -38,6 +63,28 @@ export function AdminDashboardPage() {
     price: '',
     duration: '',
     category: ''
+  });
+
+  const [editingBlogPost, setEditingBlogPost] = useState<BlogPost | null>(null);
+  const [blogPostForm, setBlogPostForm] = useState({
+    title: '',
+    slug: '',
+    excerpt: '',
+    content: '',
+    category: '',
+    imageUrl: '',
+    published: false
+  });
+
+  const [editingTestimonial, setEditingTestimonial] = useState<Testimonial | null>(null);
+  const [testimonialForm, setTestimonialForm] = useState({
+    name: '',
+    title: '',
+    company: '',
+    content: '',
+    rating: 5,
+    imageUrl: '',
+    featured: false
   });
 
   // Check authentication status
@@ -62,15 +109,15 @@ export function AdminDashboardPage() {
     queryKey: ["/api/contacts"],
   }) as { data: any[] };
 
-  // Fetch blog posts
+  // Fetch blog posts for admin (all posts)
   const { data: blogPosts = [] } = useQuery({
-    queryKey: ["/api/blog-posts"],
-  }) as { data: any[] };
+    queryKey: ["/api/admin/blog-posts"],
+  }) as { data: BlogPost[] };
 
-  // Fetch testimonials
+  // Fetch testimonials for admin (all testimonials)
   const { data: testimonials = [] } = useQuery({
-    queryKey: ["/api/testimonials"],
-  }) as { data: any[] };
+    queryKey: ["/api/admin/testimonials"],
+  }) as { data: Testimonial[] };
 
   const handleLogout = async () => {
     try {
@@ -91,7 +138,7 @@ export function AdminDashboardPage() {
 
   const handleCreateService = useMutation({
     mutationFn: async (data: Omit<Service, 'id'>) => {
-      return apiRequest("POST", "/api/services", data);
+      return apiRequest("POST", "/api/admin/services", data);
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ["/api/services"] });
@@ -105,6 +152,136 @@ export function AdminDashboardPage() {
       toast({
         title: "Error",
         description: "Failed to create service.",
+        variant: "destructive",
+      });
+    },
+  });
+
+  // Blog Post CRUD Operations
+  const handleCreateBlogPost = useMutation({
+    mutationFn: async (data: Omit<BlogPost, 'id' | 'createdAt' | 'updatedAt'>) => {
+      return apiRequest("POST", "/api/admin/blog-posts", data);
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ["/api/admin/blog-posts"] });
+      setBlogPostForm({ title: '', slug: '', excerpt: '', content: '', category: '', imageUrl: '', published: false });
+      setEditingBlogPost(null);
+      toast({
+        title: "Blog post created",
+        description: "New blog post has been created successfully.",
+      });
+    },
+    onError: () => {
+      toast({
+        title: "Error",
+        description: "Failed to create blog post.",
+        variant: "destructive",
+      });
+    },
+  });
+
+  const handleUpdateBlogPost = useMutation({
+    mutationFn: async (data: BlogPost) => {
+      return apiRequest("PUT", `/api/admin/blog-posts/${data.id}`, data);
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ["/api/admin/blog-posts"] });
+      setBlogPostForm({ title: '', slug: '', excerpt: '', content: '', category: '', imageUrl: '', published: false });
+      setEditingBlogPost(null);
+      toast({
+        title: "Blog post updated",
+        description: "Blog post has been updated successfully.",
+      });
+    },
+    onError: () => {
+      toast({
+        title: "Error",
+        description: "Failed to update blog post.",
+        variant: "destructive",
+      });
+    },
+  });
+
+  const handleDeleteBlogPost = useMutation({
+    mutationFn: async (id: string) => {
+      return apiRequest("DELETE", `/api/admin/blog-posts/${id}`, {});
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ["/api/admin/blog-posts"] });
+      toast({
+        title: "Blog post deleted",
+        description: "Blog post has been deleted successfully.",
+      });
+    },
+    onError: () => {
+      toast({
+        title: "Error",
+        description: "Failed to delete blog post.",
+        variant: "destructive",
+      });
+    },
+  });
+
+  // Testimonial CRUD Operations
+  const handleCreateTestimonial = useMutation({
+    mutationFn: async (data: Omit<Testimonial, 'id' | 'createdAt'>) => {
+      return apiRequest("POST", "/api/admin/testimonials", data);
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ["/api/admin/testimonials"] });
+      setTestimonialForm({ name: '', title: '', company: '', content: '', rating: 5, imageUrl: '', featured: false });
+      setEditingTestimonial(null);
+      toast({
+        title: "Testimonial created",
+        description: "New testimonial has been created successfully.",
+      });
+    },
+    onError: () => {
+      toast({
+        title: "Error",
+        description: "Failed to create testimonial.",
+        variant: "destructive",
+      });
+    },
+  });
+
+  const handleUpdateTestimonial = useMutation({
+    mutationFn: async (data: Testimonial) => {
+      return apiRequest("PUT", `/api/admin/testimonials/${data.id}`, data);
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ["/api/admin/testimonials"] });
+      setTestimonialForm({ name: '', title: '', company: '', content: '', rating: 5, imageUrl: '', featured: false });
+      setEditingTestimonial(null);
+      toast({
+        title: "Testimonial updated",
+        description: "Testimonial has been updated successfully.",
+      });
+    },
+    onError: () => {
+      toast({
+        title: "Error",
+        description: "Failed to update testimonial.",
+        variant: "destructive",
+      });
+    },
+  });
+
+  const handleDeleteTestimonial = useMutation({
+    mutationFn: async (id: string) => {
+      return apiRequest("DELETE", `/api/admin/testimonials/${id}`, {});
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ["/api/admin/testimonials"] });
+      toast({
+        title: "Testimonial deleted",
+        description: "Testimonial has been deleted successfully.",
+      });
+    },
+    onError: () => {
+      toast({
+        title: "Error",
+        description: "Failed to delete testimonial.",
         variant: "destructive",
       });
     },
@@ -157,7 +334,7 @@ export function AdminDashboardPage() {
     const serviceData = {
       name: serviceForm.name,
       description: serviceForm.description,
-      price: parseFloat(serviceForm.price),
+      price: Number(serviceForm.price) || 0,
       duration: serviceForm.duration,
       category: serviceForm.category,
     };
@@ -177,6 +354,72 @@ export function AdminDashboardPage() {
       price: service.price.toString(),
       duration: service.duration,
       category: service.category,
+    });
+  };
+
+  // Blog Post Form Handlers
+  const handleBlogPostSubmit = (e: React.FormEvent) => {
+    e.preventDefault();
+    const blogPostData = {
+      title: blogPostForm.title,
+      slug: blogPostForm.slug || blogPostForm.title.toLowerCase().replace(/\s+/g, '-'),
+      excerpt: blogPostForm.excerpt,
+      content: blogPostForm.content,
+      category: blogPostForm.category,
+      imageUrl: blogPostForm.imageUrl || undefined,
+      published: blogPostForm.published,
+    };
+
+    if (editingBlogPost) {
+      handleUpdateBlogPost.mutate({ ...blogPostData, id: editingBlogPost.id, createdAt: editingBlogPost.createdAt, updatedAt: new Date().toISOString() });
+    } else {
+      handleCreateBlogPost.mutate(blogPostData);
+    }
+  };
+
+  const startEditBlogPost = (blogPost: BlogPost) => {
+    setEditingBlogPost(blogPost);
+    setBlogPostForm({
+      title: blogPost.title,
+      slug: blogPost.slug,
+      excerpt: blogPost.excerpt,
+      content: blogPost.content,
+      category: blogPost.category,
+      imageUrl: blogPost.imageUrl || '',
+      published: blogPost.published,
+    });
+  };
+
+  // Testimonial Form Handlers
+  const handleTestimonialSubmit = (e: React.FormEvent) => {
+    e.preventDefault();
+    const testimonialData = {
+      name: testimonialForm.name,
+      title: testimonialForm.title,
+      company: testimonialForm.company || undefined,
+      content: testimonialForm.content,
+      rating: testimonialForm.rating,
+      imageUrl: testimonialForm.imageUrl || undefined,
+      featured: testimonialForm.featured,
+    };
+
+    if (editingTestimonial) {
+      handleUpdateTestimonial.mutate({ ...testimonialData, id: editingTestimonial.id, createdAt: editingTestimonial.createdAt });
+    } else {
+      handleCreateTestimonial.mutate(testimonialData);
+    }
+  };
+
+  const startEditTestimonial = (testimonial: Testimonial) => {
+    setEditingTestimonial(testimonial);
+    setTestimonialForm({
+      name: testimonial.name,
+      title: testimonial.title,
+      company: testimonial.company || '',
+      content: testimonial.content,
+      rating: testimonial.rating,
+      imageUrl: testimonial.imageUrl || '',
+      featured: testimonial.featured,
     });
   };
 
@@ -724,39 +967,310 @@ export function AdminDashboardPage() {
               )}
 
               {activeSection === 'content' && (
-                <div className="space-y-6">
-                  <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-                    <Card>
-                      <CardHeader>
-                        <CardTitle>Blog Posts ({blogPosts.length})</CardTitle>
-                      </CardHeader>
-                      <CardContent>
-                        <div className="space-y-2">
-                          {blogPosts.slice(0, 3).map((post: any, index: number) => (
-                            <div key={index} className="text-sm">
-                              <p className="font-medium">{post.title}</p>
-                              <p className="text-gray-600">{post.excerpt}</p>
+                <div className="space-y-8">
+                  {/* Blog Posts Management */}
+                  <div className="space-y-6">
+                    <div className="flex justify-between items-center">
+                      <h3 className="text-lg font-semibold">Blog Posts</h3>
+                      <Dialog>
+                        <DialogTrigger asChild>
+                          <Button>
+                            <Plus className="mr-2 w-4 h-4" />
+                            Add New Blog Post
+                          </Button>
+                        </DialogTrigger>
+                        <DialogContent className="max-w-2xl max-h-[90vh] overflow-y-auto">
+                          <DialogHeader>
+                            <DialogTitle>{editingBlogPost ? 'Edit Blog Post' : 'Create New Blog Post'}</DialogTitle>
+                            <DialogDescription>
+                              {editingBlogPost ? 'Update blog post details' : 'Create a new blog post for your website'}
+                            </DialogDescription>
+                          </DialogHeader>
+                          <form onSubmit={handleBlogPostSubmit} className="space-y-4">
+                            <div>
+                              <Label htmlFor="blog-title">Title</Label>
+                              <Input
+                                id="blog-title"
+                                value={blogPostForm.title}
+                                onChange={(e) => setBlogPostForm({ ...blogPostForm, title: e.target.value })}
+                                placeholder="Enter blog post title"
+                                required
+                                data-testid="input-blog-title"
+                              />
                             </div>
-                          ))}
-                        </div>
-                      </CardContent>
-                    </Card>
+                            <div>
+                              <Label htmlFor="blog-slug">Slug (URL)</Label>
+                              <Input
+                                id="blog-slug"
+                                value={blogPostForm.slug}
+                                onChange={(e) => setBlogPostForm({ ...blogPostForm, slug: e.target.value })}
+                                placeholder="auto-generated-from-title"
+                                data-testid="input-blog-slug"
+                              />
+                            </div>
+                            <div>
+                              <Label htmlFor="blog-excerpt">Excerpt</Label>
+                              <Textarea
+                                id="blog-excerpt"
+                                value={blogPostForm.excerpt}
+                                onChange={(e) => setBlogPostForm({ ...blogPostForm, excerpt: e.target.value })}
+                                placeholder="Brief description of the blog post"
+                                required
+                                data-testid="textarea-blog-excerpt"
+                              />
+                            </div>
+                            <div>
+                              <Label htmlFor="blog-content">Content</Label>
+                              <Textarea
+                                id="blog-content"
+                                value={blogPostForm.content}
+                                onChange={(e) => setBlogPostForm({ ...blogPostForm, content: e.target.value })}
+                                placeholder="Full blog post content"
+                                className="min-h-[200px]"
+                                required
+                                data-testid="textarea-blog-content"
+                              />
+                            </div>
+                            <div className="grid grid-cols-2 gap-4">
+                              <div>
+                                <Label htmlFor="blog-category">Category</Label>
+                                <Input
+                                  id="blog-category"
+                                  value={blogPostForm.category}
+                                  onChange={(e) => setBlogPostForm({ ...blogPostForm, category: e.target.value })}
+                                  placeholder="Career Advice"
+                                  required
+                                  data-testid="input-blog-category"
+                                />
+                              </div>
+                              <div>
+                                <Label htmlFor="blog-image">Image URL</Label>
+                                <Input
+                                  id="blog-image"
+                                  value={blogPostForm.imageUrl}
+                                  onChange={(e) => setBlogPostForm({ ...blogPostForm, imageUrl: e.target.value })}
+                                  placeholder="https://example.com/image.jpg"
+                                  data-testid="input-blog-image"
+                                />
+                              </div>
+                            </div>
+                            <div className="flex items-center space-x-2">
+                              <input
+                                type="checkbox"
+                                id="blog-published"
+                                checked={blogPostForm.published}
+                                onChange={(e) => setBlogPostForm({ ...blogPostForm, published: e.target.checked })}
+                                data-testid="checkbox-blog-published"
+                              />
+                              <Label htmlFor="blog-published">Published</Label>
+                            </div>
+                            <Button type="submit" className="w-full" data-testid="button-submit-blog">
+                              {editingBlogPost ? 'Update Blog Post' : 'Create Blog Post'}
+                            </Button>
+                          </form>
+                        </DialogContent>
+                      </Dialog>
+                    </div>
                     
-                    <Card>
-                      <CardHeader>
-                        <CardTitle>Testimonials ({testimonials.length})</CardTitle>
-                      </CardHeader>
-                      <CardContent>
-                        <div className="space-y-2">
-                          {testimonials.slice(0, 3).map((testimonial: any, index: number) => (
-                            <div key={index} className="text-sm">
-                              <p className="font-medium">{testimonial.name}</p>
-                              <p className="text-gray-600">{testimonial.content.substring(0, 100)}...</p>
+                    <div className="grid gap-4">
+                      {blogPosts.map((post) => (
+                        <Card key={post.id} className="border border-gray-200">
+                          <CardContent className="p-4">
+                            <div className="flex justify-between items-start">
+                              <div className="flex-1">
+                                <div className="flex items-center gap-2">
+                                  <h4 className="font-semibold text-lg">{post.title}</h4>
+                                  <span className={`px-2 py-1 text-xs rounded ${post.published ? 'bg-green-100 text-green-800' : 'bg-gray-100 text-gray-800'}`}>
+                                    {post.published ? 'Published' : 'Draft'}
+                                  </span>
+                                </div>
+                                <p className="text-gray-600 mt-1">{post.excerpt}</p>
+                                <div className="flex gap-4 mt-2 text-sm text-gray-500">
+                                  <span>/{post.slug}</span>
+                                  <span className="px-2 py-1 bg-blue-100 text-blue-800 rounded">{post.category}</span>
+                                </div>
+                              </div>
+                              <div className="flex gap-2">
+                                <Button
+                                  variant="outline"
+                                  size="sm"
+                                  onClick={() => startEditBlogPost(post)}
+                                  data-testid={`button-edit-blog-${post.id}`}
+                                >
+                                  <Edit className="w-4 h-4" />
+                                </Button>
+                                <Button
+                                  variant="destructive"
+                                  size="sm"
+                                  onClick={() => handleDeleteBlogPost.mutate(post.id)}
+                                  data-testid={`button-delete-blog-${post.id}`}
+                                >
+                                  <Trash2 className="w-4 h-4" />
+                                </Button>
+                              </div>
                             </div>
-                          ))}
+                          </CardContent>
+                        </Card>
+                      ))}
+                      {blogPosts.length === 0 && (
+                        <div className="text-center py-8 text-gray-500">
+                          No blog posts yet. Create your first blog post to get started.
                         </div>
-                      </CardContent>
-                    </Card>
+                      )}
+                    </div>
+                  </div>
+
+                  {/* Testimonials Management */}
+                  <div className="space-y-6 border-t pt-8">
+                    <div className="flex justify-between items-center">
+                      <h3 className="text-lg font-semibold">Testimonials</h3>
+                      <Dialog>
+                        <DialogTrigger asChild>
+                          <Button>
+                            <Plus className="mr-2 w-4 h-4" />
+                            Add New Testimonial
+                          </Button>
+                        </DialogTrigger>
+                        <DialogContent className="max-w-lg">
+                          <DialogHeader>
+                            <DialogTitle>{editingTestimonial ? 'Edit Testimonial' : 'Create New Testimonial'}</DialogTitle>
+                            <DialogDescription>
+                              {editingTestimonial ? 'Update testimonial details' : 'Add a new customer testimonial'}
+                            </DialogDescription>
+                          </DialogHeader>
+                          <form onSubmit={handleTestimonialSubmit} className="space-y-4">
+                            <div>
+                              <Label htmlFor="testimonial-name">Client Name</Label>
+                              <Input
+                                id="testimonial-name"
+                                value={testimonialForm.name}
+                                onChange={(e) => setTestimonialForm({ ...testimonialForm, name: e.target.value })}
+                                placeholder="John Doe"
+                                required
+                                data-testid="input-testimonial-name"
+                              />
+                            </div>
+                            <div>
+                              <Label htmlFor="testimonial-title">Job Title</Label>
+                              <Input
+                                id="testimonial-title"
+                                value={testimonialForm.title}
+                                onChange={(e) => setTestimonialForm({ ...testimonialForm, title: e.target.value })}
+                                placeholder="Software Engineer"
+                                required
+                                data-testid="input-testimonial-title"
+                              />
+                            </div>
+                            <div>
+                              <Label htmlFor="testimonial-company">Company</Label>
+                              <Input
+                                id="testimonial-company"
+                                value={testimonialForm.company}
+                                onChange={(e) => setTestimonialForm({ ...testimonialForm, company: e.target.value })}
+                                placeholder="Google (optional)"
+                                data-testid="input-testimonial-company"
+                              />
+                            </div>
+                            <div>
+                              <Label htmlFor="testimonial-content">Testimonial</Label>
+                              <Textarea
+                                id="testimonial-content"
+                                value={testimonialForm.content}
+                                onChange={(e) => setTestimonialForm({ ...testimonialForm, content: e.target.value })}
+                                placeholder="Share their feedback..."
+                                required
+                                data-testid="textarea-testimonial-content"
+                              />
+                            </div>
+                            <div className="grid grid-cols-2 gap-4">
+                              <div>
+                                <Label htmlFor="testimonial-rating">Rating</Label>
+                                <Input
+                                  id="testimonial-rating"
+                                  type="number"
+                                  min="1"
+                                  max="5"
+                                  value={testimonialForm.rating}
+                                  onChange={(e) => setTestimonialForm({ ...testimonialForm, rating: parseInt(e.target.value) })}
+                                  required
+                                  data-testid="input-testimonial-rating"
+                                />
+                              </div>
+                              <div>
+                                <Label htmlFor="testimonial-image">Image URL</Label>
+                                <Input
+                                  id="testimonial-image"
+                                  value={testimonialForm.imageUrl}
+                                  onChange={(e) => setTestimonialForm({ ...testimonialForm, imageUrl: e.target.value })}
+                                  placeholder="https://example.com/photo.jpg"
+                                  data-testid="input-testimonial-image"
+                                />
+                              </div>
+                            </div>
+                            <div className="flex items-center space-x-2">
+                              <input
+                                type="checkbox"
+                                id="testimonial-featured"
+                                checked={testimonialForm.featured}
+                                onChange={(e) => setTestimonialForm({ ...testimonialForm, featured: e.target.checked })}
+                                data-testid="checkbox-testimonial-featured"
+                              />
+                              <Label htmlFor="testimonial-featured">Featured Testimonial</Label>
+                            </div>
+                            <Button type="submit" className="w-full" data-testid="button-submit-testimonial">
+                              {editingTestimonial ? 'Update Testimonial' : 'Create Testimonial'}
+                            </Button>
+                          </form>
+                        </DialogContent>
+                      </Dialog>
+                    </div>
+                    
+                    <div className="grid gap-4">
+                      {testimonials.map((testimonial) => (
+                        <Card key={testimonial.id} className="border border-gray-200">
+                          <CardContent className="p-4">
+                            <div className="flex justify-between items-start">
+                              <div className="flex-1">
+                                <div className="flex items-center gap-2">
+                                  <h4 className="font-semibold text-lg">{testimonial.name}</h4>
+                                  {testimonial.featured && (
+                                    <span className="px-2 py-1 text-xs bg-yellow-100 text-yellow-800 rounded">Featured</span>
+                                  )}
+                                </div>
+                                <p className="text-gray-600">{testimonial.title}{testimonial.company && ` at ${testimonial.company}`}</p>
+                                <p className="text-gray-700 mt-2">{testimonial.content}</p>
+                                <div className="flex gap-4 mt-2 text-sm text-gray-500">
+                                  <span>{'★'.repeat(testimonial.rating)}{'☆'.repeat(5 - testimonial.rating)}</span>
+                                </div>
+                              </div>
+                              <div className="flex gap-2">
+                                <Button
+                                  variant="outline"
+                                  size="sm"
+                                  onClick={() => startEditTestimonial(testimonial)}
+                                  data-testid={`button-edit-testimonial-${testimonial.id}`}
+                                >
+                                  <Edit className="w-4 h-4" />
+                                </Button>
+                                <Button
+                                  variant="destructive"
+                                  size="sm"
+                                  onClick={() => handleDeleteTestimonial.mutate(testimonial.id)}
+                                  data-testid={`button-delete-testimonial-${testimonial.id}`}
+                                >
+                                  <Trash2 className="w-4 h-4" />
+                                </Button>
+                              </div>
+                            </div>
+                          </CardContent>
+                        </Card>
+                      ))}
+                      {testimonials.length === 0 && (
+                        <div className="text-center py-8 text-gray-500">
+                          No testimonials yet. Add your first testimonial to build credibility.
+                        </div>
+                      )}
+                    </div>
                   </div>
                 </div>
               )}
