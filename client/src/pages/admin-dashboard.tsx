@@ -154,7 +154,7 @@ export function AdminDashboardPage() {
   };
 
   const handleCreateService = useMutation({
-    mutationFn: async (data: Omit<Service, 'id'>) => {
+    mutationFn: async (data: any) => {
       return apiRequest("POST", "/api/admin/services", data);
     },
     onSuccess: () => {
@@ -305,7 +305,7 @@ export function AdminDashboardPage() {
   });
 
   const handleUpdateService = useMutation({
-    mutationFn: async (data: Service) => {
+    mutationFn: async (data: any) => {
       return apiRequest("PUT", `/api/services/${data.id}`, data);
     },
     onSuccess: () => {
@@ -351,13 +351,13 @@ export function AdminDashboardPage() {
     const serviceData = {
       name: serviceForm.name,
       description: serviceForm.description,
-      price: Number(serviceForm.price) || 0,
+      price: serviceForm.price,
       duration: serviceForm.duration,
       category: serviceForm.category,
     };
 
     if (editingService) {
-      handleUpdateService.mutate({ ...serviceData, id: editingService.id });
+      handleUpdateService.mutate({ ...editingService, ...serviceData });
     } else {
       handleCreateService.mutate(serviceData);
     }
