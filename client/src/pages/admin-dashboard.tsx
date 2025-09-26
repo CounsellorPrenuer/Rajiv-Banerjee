@@ -5,7 +5,7 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
-import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog";
+import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import { useToast } from "@/hooks/use-toast";
 import { apiRequest } from "@/lib/queryClient";
 import { useLocation } from "wouter";
@@ -58,6 +58,8 @@ export function AdminDashboardPage() {
   const [activeSection, setActiveSection] = useState<string | null>(null);
   const [editingService, setEditingService] = useState<Service | null>(null);
   const [serviceDialogOpen, setServiceDialogOpen] = useState(false);
+  const [blogPostDialogOpen, setBlogPostDialogOpen] = useState(false);
+  const [testimonialDialogOpen, setTestimonialDialogOpen] = useState(false);
   const [serviceForm, setServiceForm] = useState({
     name: '',
     description: '',
@@ -183,8 +185,9 @@ export function AdminDashboardPage() {
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ["/api/admin/blog-posts"] });
-      setBlogPostForm({ title: '', slug: '', excerpt: '', content: '', category: '', imageUrl: '', published: false });
-      setEditingBlogPost(null);
+      queryClient.invalidateQueries({ queryKey: ["/api/blog-posts"] });
+      setBlogPostDialogOpen(false);
+      resetBlogPostForm();
       toast({
         title: "Blog post created",
         description: "New blog post has been created successfully.",
@@ -205,8 +208,9 @@ export function AdminDashboardPage() {
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ["/api/admin/blog-posts"] });
-      setBlogPostForm({ title: '', slug: '', excerpt: '', content: '', category: '', imageUrl: '', published: false });
-      setEditingBlogPost(null);
+      queryClient.invalidateQueries({ queryKey: ["/api/blog-posts"] });
+      setBlogPostDialogOpen(false);
+      resetBlogPostForm();
       toast({
         title: "Blog post updated",
         description: "Blog post has been updated successfully.",
@@ -227,6 +231,7 @@ export function AdminDashboardPage() {
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ["/api/admin/blog-posts"] });
+      queryClient.invalidateQueries({ queryKey: ["/api/blog-posts"] });
       toast({
         title: "Blog post deleted",
         description: "Blog post has been deleted successfully.",
@@ -248,8 +253,9 @@ export function AdminDashboardPage() {
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ["/api/admin/testimonials"] });
-      setTestimonialForm({ name: '', title: '', company: '', content: '', rating: 5, imageUrl: '', featured: false });
-      setEditingTestimonial(null);
+      queryClient.invalidateQueries({ queryKey: ["/api/testimonials"] });
+      setTestimonialDialogOpen(false);
+      resetTestimonialForm();
       toast({
         title: "Testimonial created",
         description: "New testimonial has been created successfully.",
@@ -270,8 +276,9 @@ export function AdminDashboardPage() {
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ["/api/admin/testimonials"] });
-      setTestimonialForm({ name: '', title: '', company: '', content: '', rating: 5, imageUrl: '', featured: false });
-      setEditingTestimonial(null);
+      queryClient.invalidateQueries({ queryKey: ["/api/testimonials"] });
+      setTestimonialDialogOpen(false);
+      resetTestimonialForm();
       toast({
         title: "Testimonial updated",
         description: "Testimonial has been updated successfully.",
@@ -292,6 +299,7 @@ export function AdminDashboardPage() {
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ["/api/admin/testimonials"] });
+      queryClient.invalidateQueries({ queryKey: ["/api/testimonials"] });
       toast({
         title: "Testimonial deleted",
         description: "Testimonial has been deleted successfully.",
@@ -421,6 +429,20 @@ export function AdminDashboardPage() {
       published: blogPost.published,
     });
     setActiveSection('content'); // Switch to content section to show the form
+    setBlogPostDialogOpen(true); // Open the dialog
+  };
+
+  const resetBlogPostForm = () => {
+    setEditingBlogPost(null);
+    setBlogPostForm({
+      title: '',
+      slug: '',
+      excerpt: '',
+      content: '',
+      category: '',
+      imageUrl: '',
+      published: false
+    });
   };
 
   // Testimonial Form Handlers
@@ -455,6 +477,20 @@ export function AdminDashboardPage() {
       featured: testimonial.featured,
     });
     setActiveSection('content'); // Switch to content section to show the form
+    setTestimonialDialogOpen(true); // Open the dialog
+  };
+
+  const resetTestimonialForm = () => {
+    setEditingTestimonial(null);
+    setTestimonialForm({
+      name: '',
+      title: '',
+      company: '',
+      content: '',
+      rating: 5,
+      imageUrl: '',
+      featured: false
+    });
   };
 
   if (isLoading) {
@@ -882,104 +918,10 @@ export function AdminDashboardPage() {
                   <div className="space-y-6">
                     <div className="flex justify-between items-center">
                       <h3 className="text-lg font-semibold">Blog Posts</h3>
-                      <Dialog>
-                        <DialogTrigger asChild>
-                          <Button>
-                            <Plus className="mr-2 w-4 h-4" />
-                            Add New Blog Post
-                          </Button>
-                        </DialogTrigger>
-                        <DialogContent className="max-w-2xl max-h-[90vh] overflow-y-auto">
-                          <DialogHeader>
-                            <DialogTitle>{editingBlogPost ? 'Edit Blog Post' : 'Create New Blog Post'}</DialogTitle>
-                            <DialogDescription>
-                              {editingBlogPost ? 'Update blog post details' : 'Create a new blog post for your website'}
-                            </DialogDescription>
-                          </DialogHeader>
-                          <form onSubmit={handleBlogPostSubmit} className="space-y-4">
-                            <div>
-                              <Label htmlFor="blog-title">Title</Label>
-                              <Input
-                                id="blog-title"
-                                value={blogPostForm.title}
-                                onChange={(e) => setBlogPostForm({ ...blogPostForm, title: e.target.value })}
-                                placeholder="Enter blog post title"
-                                required
-                                data-testid="input-blog-title"
-                              />
-                            </div>
-                            <div>
-                              <Label htmlFor="blog-slug">Slug (URL)</Label>
-                              <Input
-                                id="blog-slug"
-                                value={blogPostForm.slug}
-                                onChange={(e) => setBlogPostForm({ ...blogPostForm, slug: e.target.value })}
-                                placeholder="auto-generated-from-title"
-                                data-testid="input-blog-slug"
-                              />
-                            </div>
-                            <div>
-                              <Label htmlFor="blog-excerpt">Excerpt</Label>
-                              <Textarea
-                                id="blog-excerpt"
-                                value={blogPostForm.excerpt}
-                                onChange={(e) => setBlogPostForm({ ...blogPostForm, excerpt: e.target.value })}
-                                placeholder="Brief description of the blog post"
-                                required
-                                data-testid="textarea-blog-excerpt"
-                              />
-                            </div>
-                            <div>
-                              <Label htmlFor="blog-content">Content</Label>
-                              <Textarea
-                                id="blog-content"
-                                value={blogPostForm.content}
-                                onChange={(e) => setBlogPostForm({ ...blogPostForm, content: e.target.value })}
-                                placeholder="Full blog post content"
-                                className="min-h-[200px]"
-                                required
-                                data-testid="textarea-blog-content"
-                              />
-                            </div>
-                            <div className="grid grid-cols-2 gap-4">
-                              <div>
-                                <Label htmlFor="blog-category">Category</Label>
-                                <Input
-                                  id="blog-category"
-                                  value={blogPostForm.category}
-                                  onChange={(e) => setBlogPostForm({ ...blogPostForm, category: e.target.value })}
-                                  placeholder="Career Advice"
-                                  required
-                                  data-testid="input-blog-category"
-                                />
-                              </div>
-                              <div>
-                                <Label htmlFor="blog-image">Image URL</Label>
-                                <Input
-                                  id="blog-image"
-                                  value={blogPostForm.imageUrl}
-                                  onChange={(e) => setBlogPostForm({ ...blogPostForm, imageUrl: e.target.value })}
-                                  placeholder="https://example.com/image.jpg"
-                                  data-testid="input-blog-image"
-                                />
-                              </div>
-                            </div>
-                            <div className="flex items-center space-x-2">
-                              <input
-                                type="checkbox"
-                                id="blog-published"
-                                checked={blogPostForm.published}
-                                onChange={(e) => setBlogPostForm({ ...blogPostForm, published: e.target.checked })}
-                                data-testid="checkbox-blog-published"
-                              />
-                              <Label htmlFor="blog-published">Published</Label>
-                            </div>
-                            <Button type="submit" className="w-full" data-testid="button-submit-blog">
-                              {editingBlogPost ? 'Update Blog Post' : 'Create Blog Post'}
-                            </Button>
-                          </form>
-                        </DialogContent>
-                      </Dialog>
+                      <Button onClick={() => setBlogPostDialogOpen(true)}>
+                        <Plus className="mr-2 w-4 h-4" />
+                        Add New Blog Post
+                      </Button>
                     </div>
                     
                     <div className="grid gap-4">
@@ -1034,105 +976,10 @@ export function AdminDashboardPage() {
                   <div className="space-y-6 border-t pt-8">
                     <div className="flex justify-between items-center">
                       <h3 className="text-lg font-semibold">Testimonials</h3>
-                      <Dialog>
-                        <DialogTrigger asChild>
-                          <Button>
-                            <Plus className="mr-2 w-4 h-4" />
-                            Add New Testimonial
-                          </Button>
-                        </DialogTrigger>
-                        <DialogContent className="max-w-lg">
-                          <DialogHeader>
-                            <DialogTitle>{editingTestimonial ? 'Edit Testimonial' : 'Create New Testimonial'}</DialogTitle>
-                            <DialogDescription>
-                              {editingTestimonial ? 'Update testimonial details' : 'Add a new customer testimonial'}
-                            </DialogDescription>
-                          </DialogHeader>
-                          <form onSubmit={handleTestimonialSubmit} className="space-y-4">
-                            <div>
-                              <Label htmlFor="testimonial-name">Client Name</Label>
-                              <Input
-                                id="testimonial-name"
-                                value={testimonialForm.name}
-                                onChange={(e) => setTestimonialForm({ ...testimonialForm, name: e.target.value })}
-                                placeholder="John Doe"
-                                required
-                                data-testid="input-testimonial-name"
-                              />
-                            </div>
-                            <div>
-                              <Label htmlFor="testimonial-title">Job Title</Label>
-                              <Input
-                                id="testimonial-title"
-                                value={testimonialForm.title}
-                                onChange={(e) => setTestimonialForm({ ...testimonialForm, title: e.target.value })}
-                                placeholder="Software Engineer"
-                                required
-                                data-testid="input-testimonial-title"
-                              />
-                            </div>
-                            <div>
-                              <Label htmlFor="testimonial-company">Company</Label>
-                              <Input
-                                id="testimonial-company"
-                                value={testimonialForm.company}
-                                onChange={(e) => setTestimonialForm({ ...testimonialForm, company: e.target.value })}
-                                placeholder="Google (optional)"
-                                data-testid="input-testimonial-company"
-                              />
-                            </div>
-                            <div>
-                              <Label htmlFor="testimonial-content">Testimonial</Label>
-                              <Textarea
-                                id="testimonial-content"
-                                value={testimonialForm.content}
-                                onChange={(e) => setTestimonialForm({ ...testimonialForm, content: e.target.value })}
-                                placeholder="Share their feedback..."
-                                required
-                                data-testid="textarea-testimonial-content"
-                              />
-                            </div>
-                            <div className="grid grid-cols-2 gap-4">
-                              <div>
-                                <Label htmlFor="testimonial-rating">Rating</Label>
-                                <Input
-                                  id="testimonial-rating"
-                                  type="number"
-                                  min="1"
-                                  max="5"
-                                  value={testimonialForm.rating}
-                                  onChange={(e) => setTestimonialForm({ ...testimonialForm, rating: parseInt(e.target.value) })}
-                                  required
-                                  data-testid="input-testimonial-rating"
-                                />
-                              </div>
-                              <div>
-                                <Label htmlFor="testimonial-image">Image URL</Label>
-                                <Input
-                                  id="testimonial-image"
-                                  value={testimonialForm.imageUrl}
-                                  onChange={(e) => setTestimonialForm({ ...testimonialForm, imageUrl: e.target.value })}
-                                  placeholder="https://example.com/photo.jpg"
-                                  data-testid="input-testimonial-image"
-                                />
-                              </div>
-                            </div>
-                            <div className="flex items-center space-x-2">
-                              <input
-                                type="checkbox"
-                                id="testimonial-featured"
-                                checked={testimonialForm.featured}
-                                onChange={(e) => setTestimonialForm({ ...testimonialForm, featured: e.target.checked })}
-                                data-testid="checkbox-testimonial-featured"
-                              />
-                              <Label htmlFor="testimonial-featured">Featured Testimonial</Label>
-                            </div>
-                            <Button type="submit" className="w-full" data-testid="button-submit-testimonial">
-                              {editingTestimonial ? 'Update Testimonial' : 'Create Testimonial'}
-                            </Button>
-                          </form>
-                        </DialogContent>
-                      </Dialog>
+                      <Button onClick={() => setTestimonialDialogOpen(true)}>
+                        <Plus className="mr-2 w-4 h-4" />
+                        Add New Testimonial
+                      </Button>
                     </div>
                     
                     <div className="grid gap-4">
@@ -1289,6 +1136,205 @@ export function AdminDashboardPage() {
               </div>
               <Button type="submit" className="w-full">
                 {editingService ? 'Update Service' : 'Create Service'}
+              </Button>
+            </form>
+          </DialogContent>
+        </Dialog>
+
+        {/* Blog Post Dialog - Outside of sections for proper state control */}
+        <Dialog open={blogPostDialogOpen} onOpenChange={(open) => {
+          setBlogPostDialogOpen(open);
+          if (!open) {
+            resetBlogPostForm();
+          }
+        }}>
+          <DialogContent className="max-w-2xl max-h-[90vh] overflow-y-auto">
+            <DialogHeader>
+              <DialogTitle>{editingBlogPost ? 'Edit Blog Post' : 'Create New Blog Post'}</DialogTitle>
+              <DialogDescription>
+                {editingBlogPost ? 'Update blog post details' : 'Create a new blog post for your website'}
+              </DialogDescription>
+            </DialogHeader>
+            <form onSubmit={handleBlogPostSubmit} className="space-y-4">
+              <div>
+                <Label htmlFor="blog-title">Title</Label>
+                <Input
+                  id="blog-title"
+                  value={blogPostForm.title}
+                  onChange={(e) => setBlogPostForm({ ...blogPostForm, title: e.target.value })}
+                  placeholder="Enter blog post title"
+                  required
+                  data-testid="input-blog-title"
+                />
+              </div>
+              <div>
+                <Label htmlFor="blog-slug">Slug (URL)</Label>
+                <Input
+                  id="blog-slug"
+                  value={blogPostForm.slug}
+                  onChange={(e) => setBlogPostForm({ ...blogPostForm, slug: e.target.value })}
+                  placeholder="auto-generated-from-title"
+                  data-testid="input-blog-slug"
+                />
+              </div>
+              <div>
+                <Label htmlFor="blog-excerpt">Excerpt</Label>
+                <Textarea
+                  id="blog-excerpt"
+                  value={blogPostForm.excerpt}
+                  onChange={(e) => setBlogPostForm({ ...blogPostForm, excerpt: e.target.value })}
+                  placeholder="Brief description of the blog post"
+                  required
+                  data-testid="textarea-blog-excerpt"
+                />
+              </div>
+              <div>
+                <Label htmlFor="blog-content">Content</Label>
+                <Textarea
+                  id="blog-content"
+                  value={blogPostForm.content}
+                  onChange={(e) => setBlogPostForm({ ...blogPostForm, content: e.target.value })}
+                  placeholder="Full blog post content"
+                  className="min-h-[200px]"
+                  required
+                  data-testid="textarea-blog-content"
+                />
+              </div>
+              <div className="grid grid-cols-2 gap-4">
+                <div>
+                  <Label htmlFor="blog-category">Category</Label>
+                  <Input
+                    id="blog-category"
+                    value={blogPostForm.category}
+                    onChange={(e) => setBlogPostForm({ ...blogPostForm, category: e.target.value })}
+                    placeholder="Career Advice"
+                    required
+                    data-testid="input-blog-category"
+                  />
+                </div>
+                <div>
+                  <Label htmlFor="blog-image">Image URL</Label>
+                  <Input
+                    id="blog-image"
+                    value={blogPostForm.imageUrl}
+                    onChange={(e) => setBlogPostForm({ ...blogPostForm, imageUrl: e.target.value })}
+                    placeholder="https://example.com/image.jpg"
+                    data-testid="input-blog-image"
+                  />
+                </div>
+              </div>
+              <div className="flex items-center space-x-2">
+                <input
+                  type="checkbox"
+                  id="blog-published"
+                  checked={blogPostForm.published}
+                  onChange={(e) => setBlogPostForm({ ...blogPostForm, published: e.target.checked })}
+                  data-testid="checkbox-blog-published"
+                />
+                <Label htmlFor="blog-published">Published</Label>
+              </div>
+              <Button type="submit" className="w-full" data-testid="button-submit-blog">
+                {editingBlogPost ? 'Update Blog Post' : 'Create Blog Post'}
+              </Button>
+            </form>
+          </DialogContent>
+        </Dialog>
+
+        {/* Testimonial Dialog - Outside of sections for proper state control */}
+        <Dialog open={testimonialDialogOpen} onOpenChange={(open) => {
+          setTestimonialDialogOpen(open);
+          if (!open) {
+            resetTestimonialForm();
+          }
+        }}>
+          <DialogContent className="max-w-lg">
+            <DialogHeader>
+              <DialogTitle>{editingTestimonial ? 'Edit Testimonial' : 'Create New Testimonial'}</DialogTitle>
+              <DialogDescription>
+                {editingTestimonial ? 'Update testimonial details' : 'Add a new customer testimonial'}
+              </DialogDescription>
+            </DialogHeader>
+            <form onSubmit={handleTestimonialSubmit} className="space-y-4">
+              <div>
+                <Label htmlFor="testimonial-name">Client Name</Label>
+                <Input
+                  id="testimonial-name"
+                  value={testimonialForm.name}
+                  onChange={(e) => setTestimonialForm({ ...testimonialForm, name: e.target.value })}
+                  placeholder="John Doe"
+                  required
+                  data-testid="input-testimonial-name"
+                />
+              </div>
+              <div>
+                <Label htmlFor="testimonial-title">Job Title</Label>
+                <Input
+                  id="testimonial-title"
+                  value={testimonialForm.title}
+                  onChange={(e) => setTestimonialForm({ ...testimonialForm, title: e.target.value })}
+                  placeholder="Software Engineer"
+                  required
+                  data-testid="input-testimonial-title"
+                />
+              </div>
+              <div>
+                <Label htmlFor="testimonial-company">Company</Label>
+                <Input
+                  id="testimonial-company"
+                  value={testimonialForm.company}
+                  onChange={(e) => setTestimonialForm({ ...testimonialForm, company: e.target.value })}
+                  placeholder="Google (optional)"
+                  data-testid="input-testimonial-company"
+                />
+              </div>
+              <div>
+                <Label htmlFor="testimonial-content">Testimonial</Label>
+                <Textarea
+                  id="testimonial-content"
+                  value={testimonialForm.content}
+                  onChange={(e) => setTestimonialForm({ ...testimonialForm, content: e.target.value })}
+                  placeholder="Share their feedback..."
+                  required
+                  data-testid="textarea-testimonial-content"
+                />
+              </div>
+              <div className="grid grid-cols-2 gap-4">
+                <div>
+                  <Label htmlFor="testimonial-rating">Rating</Label>
+                  <Input
+                    id="testimonial-rating"
+                    type="number"
+                    min="1"
+                    max="5"
+                    value={testimonialForm.rating}
+                    onChange={(e) => setTestimonialForm({ ...testimonialForm, rating: parseInt(e.target.value) })}
+                    required
+                    data-testid="input-testimonial-rating"
+                  />
+                </div>
+                <div>
+                  <Label htmlFor="testimonial-image">Image URL</Label>
+                  <Input
+                    id="testimonial-image"
+                    value={testimonialForm.imageUrl}
+                    onChange={(e) => setTestimonialForm({ ...testimonialForm, imageUrl: e.target.value })}
+                    placeholder="https://example.com/photo.jpg"
+                    data-testid="input-testimonial-image"
+                  />
+                </div>
+              </div>
+              <div className="flex items-center space-x-2">
+                <input
+                  type="checkbox"
+                  id="testimonial-featured"
+                  checked={testimonialForm.featured}
+                  onChange={(e) => setTestimonialForm({ ...testimonialForm, featured: e.target.checked })}
+                  data-testid="checkbox-testimonial-featured"
+                />
+                <Label htmlFor="testimonial-featured">Featured Testimonial</Label>
+              </div>
+              <Button type="submit" className="w-full" data-testid="button-submit-testimonial">
+                {editingTestimonial ? 'Update Testimonial' : 'Create Testimonial'}
               </Button>
             </form>
           </DialogContent>
