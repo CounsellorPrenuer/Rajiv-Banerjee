@@ -20,8 +20,15 @@ export default function BlogSection() {
   const [selectedBlog, setSelectedBlog] = useState<BlogPost | null>(null);
   const [showAllArticles, setShowAllArticles] = useState(false);
   
+  // Published posts for the main display
   const { data: blogPosts, isLoading } = useQuery<BlogPost[]>({
     queryKey: ["/api/blog-posts"],
+  });
+
+  // All posts (including unpublished) for the "View All Articles" modal
+  const { data: allBlogPosts } = useQuery<BlogPost[]>({
+    queryKey: ["/api/admin/blog-posts"],
+    enabled: showAllArticles, // Only fetch when modal is opened
   });
 
   if (isLoading) {
@@ -169,7 +176,7 @@ export default function BlogSection() {
           </DialogHeader>
           
           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6 mt-6">
-            {blogPosts?.map((post) => (
+            {allBlogPosts?.map((post) => (
               <article 
                 key={post.id}
                 className="bg-card border border-border rounded-lg overflow-hidden shadow-sm hover:shadow-md transition-all duration-300 cursor-pointer"
@@ -202,7 +209,7 @@ export default function BlogSection() {
             ))}
           </div>
           
-          {!blogPosts?.length && (
+          {!allBlogPosts?.length && (
             <div className="text-center py-12 text-muted-foreground">
               No articles found. Check back later for new content!
             </div>
