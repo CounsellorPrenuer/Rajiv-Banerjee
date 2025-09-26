@@ -15,7 +15,7 @@ export default function AboutSection() {
         <div className="grid grid-cols-1 lg:grid-cols-2 gap-16 items-center">
           <div className="scroll-animate">
             <img 
-              src="https://images.unsplash.com/photo-1472099645785-5658abf4ff4e?ixlib=rb-4.0.3&auto=format&fit=crop&w=500&h=600" 
+              src="https://via.placeholder.com/500x600/6366F1/FFFFFF?text=Profile+Photo" 
               alt="Rajiv Banerjee Profile" 
               className="w-full max-w-md rounded-2xl shadow-2xl mx-auto lg:mx-0"
               data-testid="img-rajiv-profile"
