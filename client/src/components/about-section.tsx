@@ -12,16 +12,7 @@ export default function AboutSection() {
   return (
     <section id="about" className="py-20 bg-gradient-to-br from-blue-50 via-white to-indigo-50 dark:from-gray-900 dark:via-gray-800 dark:to-gray-900" data-testid="about-section">
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-        <div className="grid grid-cols-1 lg:grid-cols-2 gap-16 items-center">
-          <div className="scroll-animate">
-            <img 
-              src="https://via.placeholder.com/500x600/6366F1/FFFFFF?text=Profile+Photo" 
-              alt="Rajiv Banerjee Profile" 
-              className="w-full max-w-md rounded-2xl shadow-2xl mx-auto lg:mx-0"
-              data-testid="img-rajiv-profile"
-            />
-          </div>
-          
+        <div className="max-w-4xl mx-auto">
           <div className="space-y-8 scroll-animate">
             <div>
               <h2 className="text-4xl font-display font-bold text-foreground mb-6">
