@@ -51,14 +51,6 @@ export default function AboutSection() {
                 ))}
               </div>
             </div>
-            
-            <Button 
-              className="bg-primary text-primary-foreground px-8 py-4 rounded-lg font-semibold hover:bg-opacity-90 transition-all duration-300"
-              data-testid="button-download-resume"
-            >
-              <Download className="mr-2" />
-              Download Resume
-            </Button>
           </div>
         </div>
       </div>
