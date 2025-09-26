@@ -57,6 +57,7 @@ export function AdminDashboardPage() {
   const queryClient = useQueryClient();
   const [activeSection, setActiveSection] = useState<string | null>(null);
   const [editingService, setEditingService] = useState<Service | null>(null);
+  const [serviceDialogOpen, setServiceDialogOpen] = useState(false);
   const [serviceForm, setServiceForm] = useState({
     name: '',
     description: '',
@@ -159,7 +160,8 @@ export function AdminDashboardPage() {
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ["/api/services"] });
-      setServiceForm({ name: '', description: '', price: '', duration: '', category: '' });
+      setServiceDialogOpen(false);
+      resetServiceForm();
       toast({
         title: "Service created",
         description: "New service has been created successfully.",
@@ -310,8 +312,8 @@ export function AdminDashboardPage() {
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ["/api/services"] });
-      setEditingService(null);
-      setServiceForm({ name: '', description: '', price: '', duration: '', category: '' });
+      setServiceDialogOpen(false);
+      resetServiceForm();
       toast({
         title: "Service updated",
         description: "Service has been updated successfully.",
@@ -372,6 +374,19 @@ export function AdminDashboardPage() {
       duration: service.duration,
       category: service.category,
     });
+    setActiveSection('services'); // Switch to services section to show the form
+    setServiceDialogOpen(true); // Open the dialog
+  };
+
+  const resetServiceForm = () => {
+    setEditingService(null);
+    setServiceForm({
+      name: '',
+      description: '',
+      price: '',
+      duration: '',
+      category: ''
+    });
   };
 
   // Blog Post Form Handlers
@@ -405,6 +420,7 @@ export function AdminDashboardPage() {
       imageUrl: blogPost.imageUrl || '',
       published: blogPost.published,
     });
+    setActiveSection('content'); // Switch to content section to show the form
   };
 
   // Testimonial Form Handlers
@@ -438,6 +454,7 @@ export function AdminDashboardPage() {
       imageUrl: testimonial.imageUrl || '',
       featured: testimonial.featured,
     });
+    setActiveSection('content'); // Switch to content section to show the form
   };
 
   if (isLoading) {
@@ -604,28 +621,7 @@ export function AdminDashboardPage() {
               </Button>
             </CardContent>
           </Card>
-
-
-          <Card>
-            <CardHeader>
-              <CardTitle className="flex items-center gap-2">
-                <MessageSquare className="h-5 w-5" />
-                Testimonials
-              </CardTitle>
-              <CardDescription>
-                Manage customer testimonials and reviews
-              </CardDescription>
-            </CardHeader>
-            <CardContent>
-              <Button 
-                className="w-full" 
-                onClick={() => setActiveSection('testimonials')}
-                data-testid="button-manage-testimonials"
-              >
-                Manage Testimonials
-              </Button>
-            </CardContent>
-          </Card>
+          
 
           <Card>
             <CardHeader>
@@ -671,80 +667,10 @@ export function AdminDashboardPage() {
                 <div className="space-y-6">
                   <div className="flex justify-between items-center">
                     <h3 className="text-lg font-semibold">Comprehensive Career Solutions</h3>
-                    <Dialog>
-                      <DialogTrigger asChild>
-                        <Button>
-                          <Plus className="mr-2 w-4 h-4" />
-                          Add New Service
-                        </Button>
-                      </DialogTrigger>
-                      <DialogContent className="max-w-md">
-                        <DialogHeader>
-                          <DialogTitle>{editingService ? 'Edit Service' : 'Create New Service'}</DialogTitle>
-                          <DialogDescription>
-                            {editingService ? 'Update service details' : 'Add a new career counseling service'}
-                          </DialogDescription>
-                        </DialogHeader>
-                        <form onSubmit={handleServiceSubmit} className="space-y-4">
-                          <div>
-                            <Label htmlFor="name">Service Name</Label>
-                            <Input
-                              id="name"
-                              value={serviceForm.name}
-                              onChange={(e) => setServiceForm({ ...serviceForm, name: e.target.value })}
-                              placeholder="e.g., Career Guidance Session"
-                              required
-                            />
-                          </div>
-                          <div>
-                            <Label htmlFor="description">Description</Label>
-                            <Textarea
-                              id="description"
-                              value={serviceForm.description}
-                              onChange={(e) => setServiceForm({ ...serviceForm, description: e.target.value })}
-                              placeholder="Describe the service..."
-                              required
-                            />
-                          </div>
-                          <div className="grid grid-cols-2 gap-4">
-                            <div>
-                              <Label htmlFor="price">Price (₹)</Label>
-                              <Input
-                                id="price"
-                                type="number"
-                                value={serviceForm.price}
-                                onChange={(e) => setServiceForm({ ...serviceForm, price: e.target.value })}
-                                placeholder="5000"
-                                required
-                              />
-                            </div>
-                            <div>
-                              <Label htmlFor="duration">Duration</Label>
-                              <Input
-                                id="duration"
-                                value={serviceForm.duration}
-                                onChange={(e) => setServiceForm({ ...serviceForm, duration: e.target.value })}
-                                placeholder="60 minutes"
-                                required
-                              />
-                            </div>
-                          </div>
-                          <div>
-                            <Label htmlFor="category">Category</Label>
-                            <Input
-                              id="category"
-                              value={serviceForm.category}
-                              onChange={(e) => setServiceForm({ ...serviceForm, category: e.target.value })}
-                              placeholder="Career Guidance"
-                              required
-                            />
-                          </div>
-                          <Button type="submit" className="w-full">
-                            {editingService ? 'Update Service' : 'Create Service'}
-                          </Button>
-                        </form>
-                      </DialogContent>
-                    </Dialog>
+                    <Button onClick={() => setServiceDialogOpen(true)}>
+                      <Plus className="mr-2 w-4 h-4" />
+                      Add New Service
+                    </Button>
                   </div>
                   
                   <div className="grid gap-4">
@@ -1292,6 +1218,81 @@ export function AdminDashboardPage() {
             </CardContent>
           </Card>
         )}
+
+        {/* Service Dialog - Outside of sections for proper state control */}
+        <Dialog open={serviceDialogOpen} onOpenChange={(open) => {
+          setServiceDialogOpen(open);
+          if (!open) {
+            resetServiceForm();
+          }
+        }}>
+          <DialogContent className="max-w-md">
+            <DialogHeader>
+              <DialogTitle>{editingService ? 'Edit Service' : 'Create New Service'}</DialogTitle>
+              <DialogDescription>
+                {editingService ? 'Update service details' : 'Add a new career counseling service'}
+              </DialogDescription>
+            </DialogHeader>
+            <form onSubmit={handleServiceSubmit} className="space-y-4">
+              <div>
+                <Label htmlFor="name">Service Name</Label>
+                <Input
+                  id="name"
+                  value={serviceForm.name}
+                  onChange={(e) => setServiceForm({ ...serviceForm, name: e.target.value })}
+                  placeholder="e.g., Career Guidance Session"
+                  required
+                />
+              </div>
+              <div>
+                <Label htmlFor="description">Description</Label>
+                <Textarea
+                  id="description"
+                  value={serviceForm.description}
+                  onChange={(e) => setServiceForm({ ...serviceForm, description: e.target.value })}
+                  placeholder="Describe the service..."
+                  required
+                />
+              </div>
+              <div className="grid grid-cols-2 gap-4">
+                <div>
+                  <Label htmlFor="price">Price (₹)</Label>
+                  <Input
+                    id="price"
+                    type="number"
+                    value={serviceForm.price}
+                    onChange={(e) => setServiceForm({ ...serviceForm, price: e.target.value })}
+                    placeholder="5000"
+                    required
+                  />
+                </div>
+                <div>
+                  <Label htmlFor="duration">Duration</Label>
+                  <Input
+                    id="duration"
+                    value={serviceForm.duration}
+                    onChange={(e) => setServiceForm({ ...serviceForm, duration: e.target.value })}
+                    placeholder="60 minutes"
+                    required
+                  />
+                </div>
+              </div>
+              <div>
+                <Label htmlFor="category">Category</Label>
+                <Input
+                  id="category"
+                  value={serviceForm.category}
+                  onChange={(e) => setServiceForm({ ...serviceForm, category: e.target.value })}
+                  placeholder="Career Guidance"
+                  required
+                />
+              </div>
+              <Button type="submit" className="w-full">
+                {editingService ? 'Update Service' : 'Create Service'}
+              </Button>
+            </form>
+          </DialogContent>
+        </Dialog>
 
       </main>
     </div>
