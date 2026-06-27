@@ -5,6 +5,18 @@ dist/
 .env.*
 !.env.example
 .local/
+.sanity/
 *.log
 .DS_Store
 worker/.wrangler/
+wrangler.toml.local
+*.pem
+*.key
+credentials.json
+secrets.json
+
+# Root-level build copies (deploy via GitHub Actions from dist/)
+/index.html
+/404.html
+/.nojekyll
+/assets/
