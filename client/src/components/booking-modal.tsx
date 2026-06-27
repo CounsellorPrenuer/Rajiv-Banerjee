@@ -1,343 +1,200 @@
-import { useState, useEffect } from "react";
-import { useMutation, useQuery } from "@tanstack/react-query";
-import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
+import { useState } from "react";
+import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
-import { useForm } from "react-hook-form";
-import { zodResolver } from "@hookform/resolvers/zod";
-import { z } from "zod";
 import { useToast } from "@/hooks/use-toast";
-import { X, CreditCard, User, Mail, Phone } from "lucide-react";
-import { apiRequest } from "@/lib/queryClient";
+import { CONTACT_EMAIL } from "@/lib/config";
+import { formatCurrency } from "@/lib/currency";
+import { workerPost } from "@/lib/workerApi";
+import { CheckCircle2, Loader2, Mail } from "lucide-react";
 
-const bookingFormSchema = z.object({
-  firstName: z.string().min(1, "First name is required"),
-  lastName: z.string().min(1, "Last name is required"),
-  email: z.string().email("Please enter a valid email address"),
-  phone: z.string().min(10, "Please enter a valid phone number"),
-  serviceInterest: z.string().min(1, "Service selection is required"),
-  message: z.string().min(10, "Please provide more details about your requirements")
-});
-
-type BookingFormData = z.infer<typeof bookingFormSchema>;
-
-interface BookingModalProps {
-  isOpen: boolean;
-  onClose: () => void;
-  selectedService: string;
+declare global {
+  interface Window {
+    Razorpay?: new (options: Record<string, unknown>) => { open: () => void };
+  }
 }
 
-export default function BookingModal({ isOpen, onClose, selectedService }: BookingModalProps) {
-  const [isProcessing, setIsProcessing] = useState(false);
-  const { toast } = useToast();
+type Props = {
+  open: boolean;
+  onOpenChange: (open: boolean) => void;
+  planId: string;
+  title: string;
+  category: string;
+  price: number;
+};
 
-  // Fetch services from API
-  const { data: services = [] } = useQuery({
-    queryKey: ["/api/services"]
-  }) as { data: any[] };
+type CouponResult = {
+  valid: boolean;
+  discount_amount?: number;
+  discountAmount?: number;
+  final_amount?: number;
+  finalAmount?: number;
+  message?: string;
+};
 
-  // Find the current service by matching serviceType
-  const currentService = services.find((service: any) => {
-    const serviceType = service.name.toLowerCase().replace(/\s+/g, '-');
-    return serviceType === selectedService;
-  });
-  
-  const { register, handleSubmit, formState: { errors }, reset } = useForm<BookingFormData>({
-    resolver: zodResolver(bookingFormSchema),
-    defaultValues: {
-      serviceInterest: currentService?.name || ""
-    }
-  });
+type OrderResult = {
+  key_id: string;
+  order_id: string;
+  amount: number;
+  currency: string;
+  lead_id: string;
+  final_amount: number;
+};
 
-  // Reset form when selectedService changes to ensure serviceInterest is prefilled
-  useEffect(() => {
-    if (selectedService && currentService) {
-      reset({
-        firstName: "",
-        lastName: "",
-        email: "",
-        phone: "",
-        message: "",
-        serviceInterest: currentService.name,
-      });
-    }
-  }, [selectedService, currentService, reset]);
-
-  // Create payment order mutation
-  const createOrderMutation = useMutation({
-    mutationFn: async (data: BookingFormData) => {
-      const response = await apiRequest("POST", "/api/payments/create-order", {
-        serviceType: selectedService,
-        contactInfo: data
-      });
-      return await response.json();
-    }
-  });
-
-  // Payment verification mutation
-  const verifyPaymentMutation = useMutation({
-    mutationFn: async (paymentData: any) => {
-      const response = await apiRequest("POST", "/api/payments/verify", paymentData);
-      return await response.json();
-    }
-  });
-
-  const onSubmit = async (data: BookingFormData) => {
-    if (selectedService === "enterprise-mentoring") {
-      // For enterprise mentoring, just submit contact form
-      handleContactSubmission(data);
+function loadRazorpay() {
+  return new Promise<boolean>((resolve) => {
+    if (window.Razorpay) return resolve(true);
+    const existing = document.querySelector<HTMLScriptElement>('script[src*="checkout.razorpay.com"]');
+    if (existing) {
+      existing.addEventListener("load", () => resolve(true), { once: true });
+      existing.addEventListener("error", () => resolve(false), { once: true });
       return;
     }
+    const script = document.createElement("script");
+    script.src = "https://checkout.razorpay.com/v1/checkout.js";
+    script.onload = () => resolve(true);
+    script.onerror = () => resolve(false);
+    document.body.appendChild(script);
+  });
+}
 
-    setIsProcessing(true);
-    
+export default function BookingModal({ open, onOpenChange, planId, title, category, price }: Props) {
+  const { toast } = useToast();
+  const [name, setName] = useState("");
+  const [email, setEmail] = useState("");
+  const [phone, setPhone] = useState("");
+  const [coupon, setCoupon] = useState("");
+  const [couponMessage, setCouponMessage] = useState("");
+  const [finalAmount, setFinalAmount] = useState(price);
+  const [isApplying, setIsApplying] = useState(false);
+  const [isProcessing, setIsProcessing] = useState(false);
+
+  const openMailDraft = () => {
+    const subject = encodeURIComponent(`KarmaPath booking enquiry: ${title}`);
+    const body = encodeURIComponent(
+      `Hello Rajiv,\n\nI would like to book ${title} (${category}) for ${formatCurrency(finalAmount)}.\n\nName: ${name}\nEmail: ${email}\nPhone: ${phone}\nPlan ID: ${planId}\nCoupon: ${coupon || "None"}\n`,
+    );
+    window.location.href = `mailto:${CONTACT_EMAIL}?subject=${subject}&body=${body}`;
+  };
+
+  const applyCoupon = async () => {
+    if (!coupon.trim()) {
+      setCouponMessage("Enter a coupon code.");
+      return;
+    }
+    setIsApplying(true);
     try {
-      // Create payment order
-      const orderResponse = await createOrderMutation.mutateAsync(data);
-      
-      // Initialize Razorpay
-      const options = {
-        key: orderResponse.keyId,
-        amount: orderResponse.amount,
-        currency: orderResponse.currency,
-        order_id: orderResponse.orderId,
-        name: "KarmaPath Career Coaching",
-        description: `Payment for ${currentService?.name || selectedService}`,
-        image: "/favicon.ico",
-        handler: async function (response: any) {
+      const result = await workerPost<CouponResult>("/api/coupons/preview", {
+        code: coupon.trim().toUpperCase(),
+        plan_id: planId,
+      });
+      const discount = Number(result.discountAmount ?? result.discount_amount ?? 0);
+      const total = Number(result.finalAmount ?? result.final_amount ?? Math.max(0, price - discount));
+      setFinalAmount(result.valid ? total : price);
+      setCouponMessage(result.message || (result.valid ? `Coupon applied. You save ${formatCurrency(discount)}.` : "Coupon is invalid or inactive."));
+    } catch (error) {
+      setFinalAmount(price);
+      setCouponMessage(error instanceof Error ? error.message : "Could not validate coupon.");
+    } finally {
+      setIsApplying(false);
+    }
+  };
+
+  const pay = async () => {
+    if (name.trim().length < 2 || !email.includes("@") || !/^\+?[0-9\s-]{10,15}$/.test(phone)) {
+      toast({ title: "Check your details", description: "Enter a valid name, email, and phone number.", variant: "destructive" });
+      return;
+    }
+    setIsProcessing(true);
+    try {
+      if (!(await loadRazorpay()) || !window.Razorpay) {
+        throw new Error("Razorpay could not load on this browser.");
+      }
+      const order = await workerPost<OrderResult>("/api/payments/create-order", {
+        plan_id: planId,
+        name: name.trim(),
+        email: email.trim(),
+        phone: phone.trim(),
+        coupon_code: coupon.trim().toUpperCase() || undefined,
+      });
+      setFinalAmount(order.final_amount);
+
+      const checkout = new window.Razorpay({
+        key: order.key_id,
+        amount: order.amount,
+        currency: order.currency,
+        name: "KarmaPath",
+        description: title,
+        order_id: order.order_id,
+        prefill: { name, email, contact: phone },
+        theme: { color: "hsl(221, 83%, 53%)" },
+        handler: async (response: Record<string, string>) => {
           try {
-            // Verify payment
-            await verifyPaymentMutation.mutateAsync({
-              paymentId: orderResponse.paymentId,
-              razorpayPaymentId: response.razorpay_payment_id,
-              razorpayOrderId: response.razorpay_order_id,
-              razorpaySignature: response.razorpay_signature
+            await workerPost("/api/payments/verify", {
+              plan_id: planId,
+              lead_id: order.lead_id,
+              razorpay_order_id: response.razorpay_order_id,
+              razorpay_payment_id: response.razorpay_payment_id,
+              razorpay_signature: response.razorpay_signature,
             });
-            
-            toast({
-              title: "Payment Successful!",
-              description: "Your booking has been confirmed. We'll contact you shortly.",
-            });
-            
-            handleClose();
+            toast({ title: "Payment verified", description: "Thank you. We'll contact you shortly." });
+            onOpenChange(false);
           } catch (error) {
-            console.error("Payment verification failed:", error);
-            toast({
-              title: "Payment Verification Failed",
-              description: "Please contact support with your payment details.",
-              variant: "destructive"
-            });
+            toast({ title: "Verification failed", description: error instanceof Error ? error.message : "Please contact us.", variant: "destructive" });
+          } finally {
+            setIsProcessing(false);
           }
         },
-        prefill: {
-          name: `${data.firstName} ${data.lastName}`,
-          email: data.email,
-          contact: data.phone
+        modal: {
+          ondismiss: () => setIsProcessing(false),
         },
-        theme: {
-          color: "#3B82F6"
-        }
-      };
-
-      const rzp = new (window as any).Razorpay(options);
-      
-      rzp.on('payment.failed', function (response: any) {
-        console.error("Payment failed:", response.error);
-        toast({
-          title: "Payment Failed",
-          description: "Payment was not completed. Please try again.",
-          variant: "destructive"
-        });
-        setIsProcessing(false);
       });
-
-      rzp.open();
+      checkout.open();
     } catch (error) {
-      console.error("Error creating order:", error);
-      toast({
-        title: "Booking Failed",
-        description: "Unable to process your booking. Please try again.",
-        variant: "destructive"
-      });
       setIsProcessing(false);
-    }
-  };
-
-  const handleContactSubmission = async (data: BookingFormData) => {
-    try {
-      await apiRequest("POST", "/api/contact", data);
-
       toast({
-        title: "Request Submitted!",
-        description: "We'll contact you with custom pricing details shortly.",
-      });
-      
-      handleClose();
-    } catch (error) {
-      console.error("Contact submission failed:", error);
-      toast({
-        title: "Submission Failed",
-        description: "Unable to submit your request. Please try again.",
-        variant: "destructive"
+        title: "Checkout unavailable",
+        description: error instanceof Error ? `${error.message} You can send us a pre-filled email instead.` : "Please use the email fallback.",
+        variant: "destructive",
       });
     }
   };
-
-  const handleClose = () => {
-    setIsProcessing(false);
-    reset();
-    onClose();
-  };
-
-  const selectedServiceDetails = currentService;
 
   return (
-    <Dialog open={isOpen} onOpenChange={handleClose}>
-      <DialogContent className="sm:max-w-md bg-white dark:bg-gray-900 border border-gray-200 dark:border-gray-700">
+    <Dialog open={open} onOpenChange={onOpenChange}>
+      <DialogContent className="sm:max-w-lg max-h-[92vh] overflow-y-auto">
         <DialogHeader>
-          <div className="flex items-center justify-between">
-            <DialogTitle className="text-xl font-semibold text-gray-900 dark:text-white">
-              Book {selectedServiceDetails?.name}
-            </DialogTitle>
-            <Button
-              variant="ghost"
-              size="sm"
-              onClick={handleClose}
-              className="h-6 w-6 p-0"
-              data-testid="button-close-modal"
-            >
-              <X className="h-4 w-4" />
-            </Button>
-          </div>
-          {selectedServiceDetails && (
-            <div className="text-sm text-gray-600 dark:text-gray-400">
-              Price: {selectedServiceDetails.price}
-            </div>
-          )}
+          <DialogTitle className="text-2xl">Complete Your Booking</DialogTitle>
+          <DialogDescription>Enter your details, apply a coupon, then continue to secure Razorpay checkout.</DialogDescription>
         </DialogHeader>
-
-        <form onSubmit={handleSubmit(onSubmit)} className="space-y-4">
-          <div className="grid grid-cols-2 gap-4">
-            <div className="space-y-2">
-              <Label htmlFor="firstName" className="text-sm font-medium">
-                <User className="inline w-4 h-4 mr-1" />
-                First Name
-              </Label>
-              <Input
-                {...register("firstName")}
-                id="firstName"
-                placeholder="John"
-                data-testid="input-firstName"
-                className={errors.firstName ? "border-red-500" : ""}
-              />
-              {errors.firstName && (
-                <p className="text-sm text-red-500">{errors.firstName.message}</p>
-              )}
+        <div className="rounded-2xl bg-primary/5 border border-primary/10 p-4 space-y-2">
+          <div className="flex justify-between gap-4"><span className="text-muted-foreground">Plan</span><strong className="text-right">{title}</strong></div>
+          <div className="flex justify-between gap-4"><span className="text-muted-foreground">Category</span><span className="text-right">{category}</span></div>
+          <div className="flex justify-between gap-4 pt-2 border-t"><span>Amount</span><strong className="text-xl text-primary">{formatCurrency(finalAmount)}</strong></div>
+        </div>
+        <div className="grid gap-4">
+          <div><Label htmlFor="checkout-name">Full name</Label><Input id="checkout-name" value={name} onChange={(event) => setName(event.target.value)} /></div>
+          <div><Label htmlFor="checkout-email">Email</Label><Input id="checkout-email" type="email" value={email} onChange={(event) => setEmail(event.target.value)} /></div>
+          <div><Label htmlFor="checkout-phone">Phone</Label><Input id="checkout-phone" type="tel" value={phone} onChange={(event) => setPhone(event.target.value)} /></div>
+          <div>
+            <Label htmlFor="checkout-coupon">Coupon code</Label>
+            <div className="flex gap-2">
+              <Input id="checkout-coupon" value={coupon} onChange={(event) => setCoupon(event.target.value.toUpperCase())} placeholder="Optional" />
+              <Button type="button" variant="outline" onClick={applyCoupon} disabled={isApplying}>
+                {isApplying ? <Loader2 className="w-4 h-4 animate-spin" /> : "Apply"}
+              </Button>
             </div>
-
-            <div className="space-y-2">
-              <Label htmlFor="lastName" className="text-sm font-medium">
-                Last Name
-              </Label>
-              <Input
-                {...register("lastName")}
-                id="lastName"
-                placeholder="Doe"
-                data-testid="input-lastName"
-                className={errors.lastName ? "border-red-500" : ""}
-              />
-              {errors.lastName && (
-                <p className="text-sm text-red-500">{errors.lastName.message}</p>
-              )}
-            </div>
+            {couponMessage && <p className="text-sm mt-2 flex gap-2 items-start"><CheckCircle2 className="w-4 h-4 mt-0.5 text-primary" />{couponMessage}</p>}
           </div>
-
-          <div className="space-y-2">
-            <Label htmlFor="email" className="text-sm font-medium">
-              <Mail className="inline w-4 h-4 mr-1" />
-              Email
-            </Label>
-            <Input
-              {...register("email")}
-              id="email"
-              type="email"
-              placeholder="john@example.com"
-              data-testid="input-email"
-              className={errors.email ? "border-red-500" : ""}
-            />
-            {errors.email && (
-              <p className="text-sm text-red-500">{errors.email.message}</p>
-            )}
-          </div>
-
-          <div className="space-y-2">
-            <Label htmlFor="phone" className="text-sm font-medium">
-              <Phone className="inline w-4 h-4 mr-1" />
-              Phone Number
-            </Label>
-            <Input
-              {...register("phone")}
-              id="phone"
-              type="tel"
-              placeholder="+91 98765 43210"
-              data-testid="input-phone"
-              className={errors.phone ? "border-red-500" : ""}
-            />
-            {errors.phone && (
-              <p className="text-sm text-red-500">{errors.phone.message}</p>
-            )}
-          </div>
-
-          <div className="space-y-2">
-            <Label htmlFor="message" className="text-sm font-medium">
-              Requirements
-            </Label>
-            <textarea
-              {...register("message")}
-              id="message"
-              rows={3}
-              placeholder="Please describe your specific needs and goals..."
-              data-testid="input-message"
-              className={`w-full px-3 py-2 border rounded-md shadow-sm focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500 ${
-                errors.message ? "border-red-500" : "border-gray-300"
-              }`}
-            />
-            {errors.message && (
-              <p className="text-sm text-red-500">{errors.message.message}</p>
-            )}
-          </div>
-
-          <div className="flex gap-3 pt-4">
-            <Button
-              type="button"
-              variant="outline"
-              onClick={handleClose}
-              className="flex-1"
-              data-testid="button-cancel"
-            >
-              Cancel
-            </Button>
-            <Button
-              type="submit"
-              disabled={isProcessing}
-              className="flex-1 bg-blue-600 hover:bg-blue-700 text-white"
-              data-testid="button-book-now"
-            >
-              {isProcessing ? (
-                <div className="flex items-center gap-2">
-                  <div className="w-4 h-4 border-2 border-white border-t-transparent rounded-full animate-spin" />
-                  Processing...
-                </div>
-              ) : (
-                <div className="flex items-center gap-2">
-                  <CreditCard className="w-4 h-4" />
-                  {selectedService === "enterprise-mentoring" ? "Submit Request" : "Book Now & Pay"}
-                </div>
-              )}
-            </Button>
-          </div>
-        </form>
+        </div>
+        <div className="grid sm:grid-cols-2 gap-3 pt-2">
+          <Button variant="outline" onClick={openMailDraft}><Mail className="w-4 h-4 mr-2" />Email Instead</Button>
+          <Button onClick={pay} disabled={isProcessing}>
+            {isProcessing ? <Loader2 className="w-4 h-4 mr-2 animate-spin" /> : null}
+            Pay {formatCurrency(finalAmount)}
+          </Button>
+        </div>
       </DialogContent>
     </Dialog>
   );

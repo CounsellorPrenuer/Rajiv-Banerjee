@@ -1,0 +1,9 @@
+export const PROJECT_ID = "rajivbanerjee";
+export const SANITY_PROJECT_ID = "8j37l731";
+export const SANITY_DATASET = "production";
+export const SANITY_STUDIO_HOST = "rajivbanerjee";
+export const GITHUB_PAGES_REPO_NAME = "Rajiv-Banerjee";
+export const SITE_BASE = "/Rajiv-Banerjee";
+export const WORKER_URL = "https://multi-tenant-platform.gauravgoodreads.workers.dev";
+export const CONTACT_EMAIL = "rajivban@gmail.com";
+export const CONTACT_PHONE = "+91 9830115113";

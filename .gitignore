@@ -1,6 +1,10 @@
-node_modules
-dist
+.gitignore
+node_modules/
+dist/
+.env
+.env.*
+!.env.example
+.local/
+*.log
 .DS_Store
-server/public
-vite.config.ts.*
-*.tar.gz
+worker/.wrangler/
